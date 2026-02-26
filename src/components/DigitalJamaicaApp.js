@@ -293,44 +293,118 @@ export default function DigitalJamaicaApp() {
   const [forumViewMode, setForumViewMode] = useState("categories");
   const [selectedForumCategory, setSelectedForumCategory] = useState(null);
   const [threads, setThreads] = useState(SAMPLE_THREADS);
+  const [mounted, setMounted] = useState(false);
   const navRef = useRef(null);
 
-  // ============ AUTH LOGIC ============
+  // ============ HYDRATION & PERSISTENCE ============
   useEffect(() => {
-    const stored = localStorage.getItem("digital_jamaica_user");
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch (e) {
-        console.log("Failed to load user");
+    setMounted(true);
+    // Load session
+    try {
+      const session = localStorage.getItem("dj_session");
+      if (session) {
+        const parsed = JSON.parse(session);
+        if (parsed && parsed.email) {
+          setUser(parsed);
+        }
       }
+    } catch (e) {
+      console.warn("Failed to load session:", e);
+    }
+    // Load threads
+    try {
+      const savedThreads = localStorage.getItem("dj_threads");
+      if (savedThreads) {
+        const parsed = JSON.parse(savedThreads);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setThreads(parsed);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load threads:", e);
     }
   }, []);
 
+  // Persist threads whenever they change (after mount)
+  useEffect(() => {
+    if (mounted) {
+      try {
+        localStorage.setItem("dj_threads", JSON.stringify(threads));
+      } catch (e) {
+        console.warn("Failed to save threads:", e);
+      }
+    }
+  }, [threads, mounted]);
+
   const handleRegister = (name, email, password) => {
-    const newUser = { id: Date.now(), name, email, password, joinDate: new Date().toLocaleDateString() };
-    localStorage.setItem("digital_jamaica_user", JSON.stringify(newUser));
-    setUser(newUser);
-    setShowAuthModal(false);
+    try {
+      // Load existing users
+      let users = [];
+      const stored = localStorage.getItem("dj_users");
+      if (stored) {
+        users = JSON.parse(stored);
+        if (!Array.isArray(users)) users = [];
+      }
+      // Check if email already registered
+      if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+        alert("An account with this email already exists. Please login instead.");
+        return;
+      }
+      // Create new user
+      const newUser = {
+        id: Date.now().toString(),
+        name,
+        email: email.toLowerCase(),
+        password,
+        joinDate: new Date().toLocaleDateString(),
+      };
+      users.push(newUser);
+      localStorage.setItem("dj_users", JSON.stringify(users));
+      // Save session (without password)
+      const session = { id: newUser.id, name: newUser.name, email: newUser.email, joinDate: newUser.joinDate };
+      localStorage.setItem("dj_session", JSON.stringify(session));
+      setUser(session);
+      setShowAuthModal(false);
+      alert("Registration successful! Welcome to Digital Jamaica, " + name + "!");
+    } catch (e) {
+      console.error("Registration error:", e);
+      alert("Registration failed. Please try again.");
+    }
   };
 
   const handleLogin = (email, password) => {
-    const stored = localStorage.getItem("digital_jamaica_user");
-    if (stored) {
-      const userData = JSON.parse(stored);
-      if (userData.email === email && userData.password === password) {
-        setUser(userData);
+    try {
+      const stored = localStorage.getItem("dj_users");
+      if (!stored) {
+        alert("No accounts found. Please register first.");
+        return;
+      }
+      const users = JSON.parse(stored);
+      if (!Array.isArray(users)) {
+        alert("No accounts found. Please register first.");
+        return;
+      }
+      const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+      if (found) {
+        const session = { id: found.id, name: found.name, email: found.email, joinDate: found.joinDate };
+        localStorage.setItem("dj_session", JSON.stringify(session));
+        setUser(session);
         setShowAuthModal(false);
       } else {
-        alert("Invalid email or password");
+        alert("Invalid email or password. Please try again.");
       }
-    } else {
-      alert("No account found. Please register first.");
+    } catch (e) {
+      console.error("Login error:", e);
+      alert("Login failed. Please try again.");
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("digital_jamaica_user");
+    try {
+      localStorage.removeItem("dj_session");
+    } catch (e) {
+      console.warn("Failed to clear session:", e);
+    }
     setUser(null);
     setActiveTab("home");
   };
@@ -348,9 +422,9 @@ export default function DigitalJamaicaApp() {
       preview: content.substring(0, 100) + "...",
       content,
     };
-    setThreads([newThread, ...threads]);
+    const updated = [newThread, ...threads];
+    setThreads(updated);
     setForumViewMode("threads");
-    alert("Thread created successfully!");
   };
 
   // ============ RENDER: HOME ============
@@ -706,7 +780,7 @@ export default function DigitalJamaicaApp() {
       );
     } else if (forumViewMode === "threads") {
       const category = FORUM_CATEGORIES.find((c) => c.id === selectedForumCategory);
-      const categoryThreads = threads.filter((t) => t.category === selectedForumCategory);
+      const categoryThreads = threads.filter((thread) => thread.category === selectedForumCategory);
 
       return (
         <div>
@@ -944,6 +1018,22 @@ export default function DigitalJamaicaApp() {
   );
 
   // ============ MAIN RENDER ============
+  if (!mounted) {
+    return (
+      <div style={{
+        backgroundColor: t.bg,
+        color: t.text,
+        fontFamily: f.body,
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        <p>Loading Digital Jamaica...</p>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       backgroundColor: t.bg,
