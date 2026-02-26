@@ -1,612 +1,1396 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from "react";
 
-const FONTS = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Outfit:wght@300;400;500;600;700;800&display=swap";
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-// ─── Jamaica Data ───
+// ============ THEME & FONTS ============
+const t = {
+  bg: "#0A0A0A",
+  surface: "#141414",
+  card: "#1A1A1A",
+  cardHover: "#222222",
+  border: "#2A2A2A",
+  borderLight: "#333333",
+  gold: "#D4A04C",
+  goldLight: "#E8C273",
+  goldDim: "#8B7535",
+  green: "#1B8C3D",
+  greenLight: "#2AAF52",
+  greenDark: "#0D5A24",
+  text: "#F0ECE3",
+  textSec: "#B8B0A0",
+  textMut: "#7A7265",
+  red: "#C44B4B",
+  blue: "#4A7FB5",
+};
+
+const f = {
+  display: "'Cormorant Garamond', Georgia, serif",
+  body: "'Outfit', system-ui, sans-serif",
+};
+
+// ============ EXISTING DATA ============
 const PARISHES = [
-  { name: "Kingston", pop: "89,057", vibe: "Capital city energy, culture hub", icon: "🏙️" },
-  { name: "St. Andrew", pop: "573,369", vibe: "Uptown vibes, education centre", icon: "🏫" },
-  { name: "St. Thomas", pop: "93,902", vibe: "Eastern roots, Maroon heritage", icon: "⛰️" },
-  { name: "Portland", pop: "82,183", vibe: "Lush beauty, jerk chicken origin", icon: "🌿" },
-  { name: "St. Mary", pop: "113,615", vibe: "North coast charm, Firefly", icon: "🔥" },
-  { name: "St. Ann", pop: "172,362", vibe: "Garden parish, Bob Marley birthplace", icon: "🎵" },
-  { name: "Trelawny", pop: "75,164", vibe: "Maroon Town, Cockpit Country", icon: "🏔️" },
-  { name: "St. James", pop: "184,818", vibe: "Montego Bay, tourism capital", icon: "🏖️" },
-  { name: "Hanover", pop: "69,534", vibe: "Western tip, Lucea heritage", icon: "🌅" },
-  { name: "Westmoreland", pop: "144,103", vibe: "Negril sunsets, sugarcane roots", icon: "🌾" },
-  { name: "St. Elizabeth", pop: "150,205", vibe: "Breadbasket parish, YS Falls", icon: "🌊" },
-  { name: "Manchester", pop: "190,812", vibe: "Cool highlands, Mandeville", icon: "🌤️" },
-  { name: "Clarendon", pop: "246,322", vibe: "Central heartland, farming roots", icon: "🌱" },
-  { name: "St. Catherine", pop: "516,218", vibe: "Spanish Town history, growth hub", icon: "🏛️" },
+  { name: "Kingston", population: "662,426", highlights: ["Capital city", "Bob Marley Museum", "National Gallery"] },
+  { name: "Saint Andrew", population: "662,600", highlights: ["Blue Mountains", "Hope River", "Strawberry Hill"] },
+  { name: "Saint Thomas", population: "94,000", highlights: ["Folly Ruins", "Morant Bay", "Golden Grove"] },
+  { name: "Portland", population: "80,000", highlights: ["Rio Grande River", "Reach Falls", "Frenchman's Cove"] },
+  { name: "Saint Mary", population: "110,000", highlights: ["Nine Mile (Marley birthplace)", "Dunn's River Falls", "Island Gully"] },
+  { name: "Saint Ann", population: "172,000", highlights: ["Ocho Rios", "Green Grotto Caves", "Harmony Hall"] },
+  { name: "Trelawny", population: "87,000", highlights: ["Martha Brae River", "Dunbar Falls", "Falmouth"] },
+  { name: "Saint James", population: "184,000", highlights: ["Montego Bay", "Doctor's Cave Beach", "Appleton Estate"] },
+  { name: "Westmoreland", population: "145,000", highlights: ["Savanna-la-Mar", "Black River", "Grange Hill"] },
+  { name: "Hanover", population: "70,000", highlights: ["Green Island", "Half Moon Beach", "Lucea"] },
+  { name: "Saint Elizabeth", population: "150,000", highlights: ["Black River (longest river)", "YS Falls", "Middle Quarters"] },
+  { name: "Manchester", population: "188,000", highlights: ["Mandeville", "Marshall's Pen", "Chest Hospital"] },
 ];
 
 const HISTORY_TIMELINE = [
-  { era: "Pre-Colonial", period: "Before 1494", title: "The Taino People", desc: "The Arawak-speaking Taino people called Jamaica 'Xaymaca' — Land of Wood and Water. They built a thriving civilization with advanced agriculture, pottery, and spiritual practices. Over 200 village sites have been identified across the island.", color: "#8B6914", icon: "🏺" },
-  { era: "Colonial Era", period: "1494–1655", title: "Spanish Rule", desc: "Columbus arrived in 1494. The Spanish established settlements but devastated the Taino population through disease and forced labor. Santiago de la Vega (Spanish Town) became the capital.", color: "#8B4513", icon: "⚓" },
-  { era: "British Period", period: "1655–1962", title: "Empire & Resistance", desc: "Britain seized Jamaica in 1655. The island became the largest sugar producer in the British Empire, built on the brutal enslavement of Africans. But resistance never ceased — from the Maroons' guerrilla warfare to Sam Sharpe's 1831 rebellion that accelerated abolition.", color: "#4A0E0E", icon: "⚔️" },
-  { era: "Maroon Legacy", period: "1655–Present", title: "Freedom Fighters", desc: "The Maroons — escaped enslaved Africans who built free communities in the Blue Mountains and Cockpit Country — waged successful wars against the British. Queen Nanny, a National Hero, led the Windward Maroons. Their communities still maintain autonomy and cultural traditions today.", color: "#2D5016", icon: "🏔️" },
-  { era: "Emancipation", period: "1834–1865", title: "After Slavery", desc: "Full emancipation came in 1838. Former enslaved people built free villages, established churches, and fought for land rights. Paul Bogle and George William Gordon led the 1865 Morant Bay Rebellion. Both became National Heroes.", color: "#6B4226", icon: "✊" },
-  { era: "Self-Governance", period: "1938–1962", title: "Road to Independence", desc: "The 1938 labour riots sparked the modern political movement. Norman Manley and Alexander Bustamante founded the PNP and JLP respectively. Universal adult suffrage came in 1944.", color: "#1A3C5E", icon: "📜" },
-  { era: "Independence", period: "1962–Present", title: "A Nation Is Born", desc: "On August 6, 1962, Jamaica gained independence. The black, green, and gold flag was raised. Since then, Jamaica has navigated economic challenges, political evolution, and cultural explosion — becoming one of the most influential small nations on Earth.", color: "#006400", icon: "🇯🇲" },
+  { year: "1494", event: "Columbus arrives in Jamaica", details: "Christopher Columbus arrives on Jamaica's shores, leading to Spanish colonization." },
+  { year: "1655", event: "British conquest begins", details: "English forces seize Jamaica from Spain, beginning British colonial rule." },
+  { year: "1692", event: "Port Royal earthquake", details: "Devastating earthquake destroys Port Royal, once the pirate capital of the Caribbean." },
+  { year: "1791-1804", event: "Haitian Revolution influence", details: "Haiti's successful slave rebellion inspires freedom movements across the Caribbean." },
+  { year: "1834", event: "Slavery abolished", details: "Emancipation Act frees enslaved Africans in Jamaica." },
+  { year: "1865", event: "Morant Bay Rebellion", details: "Paul Bogle leads rebellion against colonial injustice, a milestone in self-determination." },
+  { year: "1938", event: "Labor movement rises", details: "Norman Manley and Alexander Bustamante establish political parties, founding modern Jamaica." },
+  { year: "1962", event: "Independence Day", details: "Jamaica gains independence on August 6, becoming a sovereign nation." },
+  { year: "1978", event: "Reggae goes global", details: "Bob Marley performs at One Love Peace Concert, unifying a divided nation." },
+  { year: "2024", event: "Digital transformation accelerates", details: "Jamaica embraces fintech, renewable energy, and digital entrepreneurship." },
 ];
 
 const MUSIC_EVOLUTION = [
-  { genre: "Mento", period: "1940s–1950s", desc: "Jamaica's original folk music. Acoustic, humorous, community-based. Artists like Lord Flea and Count Lasher brought mento to international audiences.", color: "#D4A574" },
-  { genre: "Ska", period: "1960s", desc: "The sound of independence! Upbeat, brass-driven, joyful. The Skatalites, Prince Buster, and Millie Small made Jamaica impossible to ignore.", color: "#E8B741" },
-  { genre: "Rocksteady", period: "1966–1968", desc: "Ska slowed down and got soulful. Alton Ellis, The Paragons, and Hopeton Lewis created romantic, bass-heavy grooves.", color: "#C4713B" },
-  { genre: "Reggae", period: "1968–Present", desc: "The heartbeat of Jamaica. Bob Marley, Peter Tosh, Jimmy Cliff, and Burning Spear spread messages of justice, love, and resistance worldwide. UNESCO Intangible Cultural Heritage since 2018.", color: "#2D7D3A" },
-  { genre: "Dub", period: "1970s–Present", desc: "King Tubby, Lee 'Scratch' Perry, and Scientist stripped reggae to its bones and rebuilt it with echo, reverb, and space. Dub invented remix culture.", color: "#4A2D7D" },
-  { genre: "Dancehall", period: "1980s–Present", desc: "Digital revolution! Yellowman, Shabba Ranks, Beenie Man, and Vybz Kartel took Jamaican music in bold new directions. Dancehall culture conquered the world.", color: "#D4294B" },
+  { era: "Mento (1920s-1950s)", style: "Acoustic folk ballads about daily life, hardship, and humor.", artists: "Count Lasher, Ella Andrina", example: "Dancing with tears in my eyes" },
+  { era: "Ska (1960s)", style: "Upbeat, syncopated rhythm blending calypso, swing, and R&B.", artists: "The Skatalites, Justin Hinds", example: "Guns of Navarone" },
+  { era: "Rocksteady (1966-1968)", style: "Slower, romantic evolution from ska with prominent bass lines.", artists: "Alton Ellis, Phyllis Dillon", example: "Rock Steady" },
+  { era: "Reggae (1968-present)", style: "Syncopated rhythms with conscious lyrics, born from ska/rocksteady fusion.", artists: "Bob Marley, Peter Tosh", example: "One Love / People Get Ready" },
+  { era: "Roots Reggae (1970s-1980s)", style: "Spiritual, Rasta-influenced reggae with deep social messages.", artists: "Burning Spear, Dennis Brown", example: "Every Man Thrive" },
+  { era: "Dancehall (1980s-present)", style: "Rapid-fire rhythms, digital production, party-focused energy.", artists: "Shabba Ranks, Beenie Man", example: "Murder She Wrote" },
+  { era: "Reggae Fusion (1990s-present)", style: "Blending reggae with pop, R&B, hip-hop, and electronic music.", artists: "Sean Paul, Chronixx", example: "Gimmie The Light" },
 ];
 
 const CULTURAL_TOPICS = [
-  { title: "Patois / Jamaican Creole", icon: "🗣️", preview: "More than slang — a full language with African, English, Spanish, and Taino roots.", items: ["Wah gwaan — What's going on", "Mi deh yah — I'm here / I'm good", "Nuh badda mi — Don't bother me", "Walk good — Travel safely / Goodbye", "Irie — Everything is good/fine", "Nyam — To eat", "Pickney — Child/Children", "Yard — Home / Jamaica"] },
-  { title: "Food Traditions", icon: "🍛", preview: "Ackee and saltfish isn't just breakfast — it's national identity.", items: ["Ackee & Saltfish — National dish", "Jerk Chicken — Portland origin", "Rice & Peas — Sunday staple", "Curry Goat — Indian heritage", "Bammy — Taino cassava bread", "Mannish Water — Goat head soup", "Festival — Sweet fried dumplings", "Sorrel — Christmas drink"] },
-  { title: "Festivals & Celebrations", icon: "🎉", preview: "From Carnival to Emancipation Day, Jamaica celebrates with music, colour, and community.", items: ["Carnival — Spring bacchanal", "Reggae Sumfest — July music festival", "Independence Day — August 6", "Emancipation Day — August 1", "Jonkonnu — Christmas masquerade", "Maroon Festival — January 6", "Jamaica Day — Last Friday in Feb", "Grand Gala — Independence celebration"] },
-  { title: "Spiritual Life", icon: "🕊️", preview: "Christianity is dominant, but Jamaica's spiritual landscape includes Rastafari, Revivalism, Kumina, and more.", items: ["Rastafari — Global movement born in Jamaica", "Revivalism — Afro-Christian syncretic tradition", "Kumina — Kongolese-derived practice", "Ethiopian Orthodox — Rasta connection", "Seventh-day Adventist — Major denomination", "Baptist — Historical resistance church", "Pocomania — Spiritual healing tradition", "Nine Night — Death celebration tradition"] },
+  {
+    title: "Jamaican Patois (Jamaican Creole)",
+    description: "A living language with African, English, Spanish, and French roots. 'Mi nuh know' = 'I don't know' — it's not broken English, it's a complete linguistic system.",
+    deeper: "Patois preserves African grammar patterns and vocabulary, representing Jamaica's ancestral heritage. Recognized by linguists as a distinct language with its own rules.",
+  },
+  {
+    title: "Rastafarianism & Spiritual Beliefs",
+    description: "Religious and social movement born in 1930s Jamaica, viewing African heritage through Ethiopianism. Haile Selassie I revered as divine. Central to reggae and Jamaican identity.",
+    deeper: "Rastafarianism emphasizes natural living, dreadlocks as spiritual commitment, and ganja as sacrament. It has profoundly shaped Jamaica's music, language, and social consciousness.",
+  },
+  {
+    title: "Food Culture: Soul & Spice",
+    description: "Jamaican cuisine blends African, British, Indian, and Spanish influences. Ackee & saltfish = national dish. Rice & peas, jerk chicken, patties, and rundown (breadfruit stew) are staples.",
+    deeper: "Food is ceremonial and communal — 'Sunday dinner' brings families together. Cooking methods (jerk, boiling, stewing) preserve African techniques passed down through generations.",
+  },
+  {
+    title: "Carnival & Festival Culture",
+    description: "Jamaica Carnival (seasonal celebrations), Accompong Maroon Festival (ancestral celebration), and festival season showcase music, dance, and cultural pride.",
+    deeper: "Festivals are resistance reclaimed — they celebrate freedom won by Maroons (escaped enslaved people) and maintain African-Caribbean identity.",
+  },
+  {
+    title: "Visual Arts & Craft",
+    description: "From Junkanoo parades to intricate beadwork, Jamaican visual culture is vibrant. National artists like Bob Nerbworth and Osmond Watson shaped Caribbean art.",
+    deeper: "Jamaican art reflects the island's history — bright colors symbolize resilience, spirituality, and joy. Every craft carries stories of heritage.",
+  },
 ];
 
 const KNOWLEDGE_CATEGORIES = [
-  { id: "career", title: "Career Guidance", icon: "💼", desc: "Share professional pathways and industry insights", count: 47 },
-  { id: "tech", title: "Technology & Innovation", icon: "💻", desc: "Digital skills, coding, and tech entrepreneurship", count: 32 },
-  { id: "education", title: "Education & Scholarships", icon: "🎓", desc: "University guidance, applications, and funding", count: 58 },
-  { id: "health", title: "Health & Wellness", icon: "🏥", desc: "Medical careers, mental health, and wellbeing", count: 23 },
-  { id: "business", title: "Business & Entrepreneurship", icon: "📊", desc: "Starting businesses, market knowledge, investment", count: 41 },
-  { id: "arts", title: "Arts & Creative Industries", icon: "🎨", desc: "Music, film, visual arts, and creative careers", count: 36 },
+  {
+    title: "History Mentors",
+    mentors: [
+      { name: "Dr. Daryl Leenus", expertise: "Colonial Jamaica & independence struggles", bio: "Historian specializing in Jamaica's path to sovereignty and post-colonial nation-building." },
+      { name: "Professor Verene Shepherd", expertise: "Slavery, diaspora, & social history", bio: "Leading voice in Jamaican social history and diaspora studies, UWI-based." },
+    ],
+  },
+  {
+    title: "Music & Culture Mentors",
+    mentors: [
+      { name: "Herbie Miller", expertise: "Reggae history & ethnomusicology", bio: "Curator of Bob Marley Museum, deep knowledge of reggae's evolution." },
+      { name: "Dr. Olive Lewin", expertise: "Jamaican folk music & oral tradition", bio: "Ethnomusicologist who documented Jamaica's rich musical heritage." },
+    ],
+  },
+  {
+    title: "Language & Literature Mentors",
+    mentors: [
+      { name: "Prof. Hubert Devonish", expertise: "Jamaican Creole linguistics", bio: "Leading linguist on Creole language structure and Caribbean sociolinguistics." },
+      { name: "Kwame Dawes", expertise: "Jamaican poetry & diaspora literature", bio: "Award-winning poet and critic, explores identity and belonging in Caribbean literature." },
+    ],
+  },
 ];
 
 const YOUTH_JOURNEYS = [
-  { id: "explorer", title: "Island Explorer", age: "6–9", desc: "Discover Jamaica's 14 parishes through stories, animals, and foods", icon: "🗺️", color: "#E8B741", modules: 14, progress: 0 },
-  { id: "historian", title: "Young Historian", age: "9–12", desc: "Travel through time and meet Jamaica's heroes and heroines", icon: "📚", color: "#2D7D3A", modules: 10, progress: 0 },
-  { id: "culturalist", title: "Culture Keeper", age: "10–14", desc: "Learn patois, cook Jamaican food, and explore music traditions", icon: "🎶", color: "#D4294B", modules: 12, progress: 0 },
-  { id: "innovator", title: "Future Builder", age: "13–17", desc: "Explore Jamaica's innovation, technology, and opportunities", icon: "🚀", color: "#1A3C5E", modules: 8, progress: 0 },
+  {
+    name: "Keanya",
+    age: 17,
+    location: "Kingston",
+    dream: "STEM Career",
+    story: "I was unsure about STEM until my teacher connected me with a female software engineer in our tech community. Now I'm coding and dreaming of working at a Jamaican startup.",
+    achievement: "Completed coding bootcamp, got internship",
+  },
+  {
+    name: "Marcus",
+    age: 16,
+    location: "Manchester",
+    dream: "Sprinter",
+    story: "My coach helped me understand that talent + discipline = opportunity. Training at Champs. Aiming for Olympics.",
+    achievement: "100m time: 10.8s (U16 record in region)",
+  },
+  {
+    name: "Anaya",
+    age: 15,
+    location: "Saint Ann",
+    dream: "Social Entrepreneur",
+    story: "Started a community garden in my village. Now connecting youth to agriculture and food security. My grandmother inspires me daily.",
+    achievement: "Feeds 50+ families, mentoring 10 youth",
+  },
 ];
 
 const GUIDE_QUESTIONS = [
-  "Explain Portland culture to my child",
-  "What was life like in Jamaica in the 1970s?",
-  "Teach me Jamaican sayings",
-  "How did reggae music begin?",
-  "Tell me about the Maroons",
-  "What is Jonkonnu?",
-  "Explain the parish system",
-  "What makes Jamaican food unique?",
+  {
+    q: "How can I learn Jamaican history deeply?",
+    a: "Start with the timeline here, then read 'A History of Jamaica' by John Sherlock. Listen to reggae with conscious lyrics (Bob Marley, Burning Spear) — they ARE history lessons. Connect with a history mentor for personalized guidance.",
+  },
+  {
+    q: "What does it mean to be Jamaican?",
+    a: "It's about resilience, creativity, and connection to your roots — whether you live here or in the diaspora. It's patois, music, food, and a spirit that says 'out of many, one people.'",
+  },
+  {
+    q: "How can diaspora Jamaicans stay connected?",
+    a: "Send money home, call family, speak patois with your kids, cook Jamaican food together, celebrate Jamaican holidays, and engage with digital communities like this one.",
+  },
+  {
+    q: "What's Jamaica's future?",
+    a: "Tech innovation (silicon mountain, fintech), sustainable tourism, agricultural advancement, and a generation of young Jamaicans building solutions. Your participation matters.",
+  },
+  {
+    q: "How do I find mentorship?",
+    a: "Check the Knowledge Exchange section, connect with experts listed, reach out to community leaders, attend local workshops, and ask questions here on the forum.",
+  },
 ];
 
-// ─── Theme ───
-const t = {
-  bg: "#0A0A0A", surface: "#141414", card: "#1A1A1A", cardHover: "#222222",
-  border: "#2A2A2A", borderLight: "#333333",
-  gold: "#D4A04C", goldLight: "#E8C273", goldDim: "#8B7535",
-  green: "#1B8C3D", greenLight: "#2AAF52", greenDark: "#0D5A24",
-  text: "#F0ECE3", textSec: "#B8B0A0", textMut: "#7A7265",
-};
-const f = { display: "'Cormorant Garamond', Georgia, serif", body: "'Outfit', system-ui, sans-serif" };
+// ============ NEW DATA: FORUM, ECONOMY, SPORTS, ENVIRONMENT ============
+const FORUM_CATEGORIES = [
+  { id: "general", title: "General Discussion", icon: "💬", desc: "Talk about anything Jamaica-related", threads: 156, posts: 1243, color: "#D4A04C" },
+  { id: "culture", title: "Culture & Heritage", icon: "🎭", desc: "Discuss Jamaican culture, patois, traditions, food", threads: 89, posts: 672, color: "#2D7D3A" },
+  { id: "music", title: "Music & Entertainment", icon: "🎵", desc: "Reggae, dancehall, ska, and all Jamaican music", threads: 124, posts: 987, color: "#D4294B" },
+  { id: "diaspora", title: "Diaspora Life", icon: "🌍", desc: "Experiences of being Jamaican abroad", threads: 203, posts: 1567, color: "#4A7FB5" },
+  { id: "return", title: "Returning to Jamaica", icon: "✈️", desc: "Advice for those considering a return", threads: 78, posts: 534, color: "#FF6B35" },
+  { id: "business", title: "Business & Investment", icon: "📊", desc: "Business opportunities and entrepreneurship", threads: 67, posts: 412, color: "#8B6914" },
+  { id: "youth", title: "Youth & Education", icon: "🎓", desc: "Scholarships, education, and mentoring", threads: 91, posts: 623, color: "#1A3C5E" },
+  { id: "parish", title: "Parish Talk", icon: "📍", desc: "Represent your parish!", threads: 145, posts: 890, color: "#6B4226" },
+];
 
-// ─── Components ───
-function Badge({ children, color = t.gold, bg }) {
-  return <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 20, background: bg || `${color}18`, color, fontSize: 11, fontWeight: 600, fontFamily: f.body, letterSpacing: "0.04em", textTransform: "uppercase" }}>{children}</span>;
-}
+const SAMPLE_THREADS = [
+  { id: "t1", category: "diaspora", title: "Tips for Jamaicans Moving to Canada", author: "TrontoYardie", date: "2025-12-15", replies: 34, likes: 67, pinned: true, preview: "After 12 years in Toronto, here's everything I wish someone told me..." },
+  { id: "t2", category: "culture", title: "Teaching My Children Patois — Strategies That Work", author: "MissLouFan", date: "2025-12-10", replies: 23, likes: 89, preview: "My kids were born in London but I want them to speak patois fluently..." },
+  { id: "t3", category: "return", title: "I Moved Back After 20 Years — My Honest Experience", author: "BackAYard", date: "2025-11-28", replies: 56, likes: 134, pinned: true, preview: "Left Jamaica in 2005, came back in 2025. The island has changed dramatically..." },
+  { id: "t4", category: "music", title: "Best Reggae Revival Artists Right Now?", author: "RootsAndCulture", date: "2025-12-08", replies: 41, likes: 78, preview: "Chronixx, Protoje, Koffee obviously, but who else should I be listening to?" },
+  { id: "t5", category: "business", title: "Starting a Remote Business in Jamaica — Tax & Legal Tips", author: "DigiNomad876", date: "2025-12-01", replies: 19, likes: 45, preview: "Running a software consultancy from Mandeville..." },
+  { id: "t6", category: "youth", title: "Free Scholarships for Jamaican Students in 2026", author: "ScholarshipHunter", date: "2025-12-12", replies: 62, likes: 201, pinned: true, preview: "Comprehensive list of scholarships for 2026..." },
+];
 
-function Section({ overline, title, subtitle, align = "left" }) {
-  return (
-    <div style={{ textAlign: align, marginBottom: 32 }}>
-      {overline && <div style={{ fontFamily: f.body, fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: t.gold, marginBottom: 8 }}>{overline}</div>}
-      <h2 style={{ fontFamily: f.display, fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, color: t.text, margin: 0, lineHeight: 1.15 }}>{title}</h2>
-      {subtitle && <p style={{ fontFamily: f.body, fontSize: 15, color: t.textSec, marginTop: 8, maxWidth: align === "center" ? 560 : "none", marginLeft: align === "center" ? "auto" : 0, marginRight: align === "center" ? "auto" : 0, lineHeight: 1.6 }}>{subtitle}</p>}
+const COMMUNITY_GUIDELINES = [
+  { rule: "Respect & Kindness", desc: "Treat every member with respect. We are all family." },
+  { rule: "No Hate Speech", desc: "Zero tolerance for discrimination of any kind." },
+  { rule: "Authentic Identity", desc: "Use a consistent username. No impersonation." },
+  { rule: "No Spam", desc: "Share genuinely. Business discussions in Business category." },
+  { rule: "Protect Privacy", desc: "Never share someone's personal info without consent." },
+  { rule: "Report Concerns", desc: "See something troubling? Report it to moderators." },
+];
+
+const TECH_ECOSYSTEM = [
+  { id: "bpo", title: "BPO & Outsourcing", icon: "🏢", desc: "60,000+ employees, ~$1B USD revenue, 3rd largest FX earner", color: "#D4A04C" },
+  { id: "startups", title: "Startup Ecosystem", icon: "🚀", desc: "40+ high-tech startups, $2.17M avg raise, 1st in Caribbean", color: "#2D7D3A" },
+  { id: "silicon", title: "Silicon Mountain", icon: "⛰️", desc: "Mandeville tech hub, 2,000 entrepreneur target by 2030", color: "#1A3C5E" },
+  { id: "fintech", title: "Fintech & Digital", icon: "💳", desc: "JAM-DEX CBDC pilot, mobile money growth, blockchain", color: "#D4294B" },
+  { id: "coding", title: "Coding & Digital Skills", icon: "👩‍💻", desc: "HEART/NSTA free training, Amber Coding Academy, 28 institutions", color: "#4A7FB5" },
+  { id: "agritech", title: "Agricultural Innovation", icon: "🌱", desc: "400% hydroponic yield, 30% climate-resilient crops, $120M irrigation", color: "#FF6B35" },
+];
+
+const ECONOMY_STATS = [
+  { label: "GDP (2024)", value: "$19.93B", icon: "💰" },
+  { label: "BPO Employees", value: "60,000+", icon: "💻" },
+  { label: "Tech Startups", value: "40+", icon: "🚀" },
+  { label: "Remittances", value: "21.6% GDP", icon: "🌍" },
+  { label: "Tourism Earnings", value: "$4.2B+", icon: "✈️" },
+  { label: "Growth Rate", value: "1-3%", icon: "📈" },
+];
+
+const SPORTS_DATA = [
+  { id: "track", title: "Track & Field", icon: "⚡", desc: "Usain Bolt, Fraser-Pryce, Thompson-Herah — fastest humans ever. ISSA Champs = Jamaica's Super Bowl.", color: "#FFD700", highlights: ["Usain Bolt — 8 Olympic golds, 9.58s/19.19s WRs", "Shelly-Ann Fraser-Pryce — multiple Olympic golds", "Kishane Thompson — Paris 2024 100m silver", "Nickisha Pryce — 48.57 in 400m", "ISSA Champs — world's largest HS track meet"] },
+  { id: "football", title: "Football", icon: "⚽", desc: "1998 World Cup qualification. Reggae Girlz — 2019 & 2023 Women's World Cup.", color: "#2D7D3A", highlights: ["1998 World Cup — Jamaica's greatest sporting moment", "Reggae Girlz — Women's World Cup 2019 & 2023", "U-15 — 2025 CONCACAF League B champions", "Manning Cup & DaCosta Cup rivalry"] },
+  { id: "cricket", title: "Cricket", icon: "🏏", desc: "Sabina Park since 1930. Chris Gayle, Courtney Walsh, George Headley.", color: "#C44B4B", highlights: ["George Headley — 'Black Bradman'", "Courtney Walsh — first to 500 Test wickets", "Chris Gayle — T20 legend", "Jamaica Tallawahs — CPL"] },
+  { id: "netball", title: "Netball", icon: "🏀", desc: "Sunshine Girls — consistently world top 5.", color: "#FF6B35", highlights: ["Sunshine Girls — perennial world top 5", "Most popular women's sport in Jamaica", "Strong youth development programme"] },
+  { id: "bobsled", title: "Bobsled", icon: "🛷", desc: "1988 Olympics inspired 'Cool Runnings'. Women qualified 2018 & 2022.", color: "#4A7FB5", highlights: ["1988 Calgary — legendary debut", "Inspired 'Cool Runnings' movie", "Women's team — 2018 & 2022 Olympics"] },
+];
+
+const ENVIRONMENT_DATA = [
+  { id: "unesco", title: "Blue & John Crow Mountains", icon: "🏔️", desc: "UNESCO World Heritage Site — 26,252 hectares, 294 endemic species, 50% plant endemicity above 900m" },
+  { id: "marine", title: "Marine Conservation", icon: "🐠", desc: "Montego Bay Marine Park pioneer. Fish sanctuaries, reef restoration, mangrove protection" },
+  { id: "climate", title: "Climate Resilience", icon: "🌡️", desc: "Climate-smart agriculture, hydroponic farming (400% more yield, 90% less water)" },
+  { id: "biodiversity", title: "Unique Biodiversity", icon: "🦜", desc: "3,000+ plant species, 28 endemic birds, Doctor Bird national bird, Jamaican Iguana revival" },
+  { id: "sustainability", title: "Sustainability", icon: "♻️", desc: "Single-use plastic ban since 2019, solar expansion, Trees That Feed, farm-to-table movement" },
+];
+
+// ============ HELPER COMPONENTS ============
+const Badge = ({ label, color = t.goldLight, size = "sm", icon = null }) => (
+  <span style={{
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: size === "sm" ? "4px 12px" : "8px 16px",
+    backgroundColor: `${color}20`,
+    color: color,
+    borderRadius: "20px",
+    fontSize: size === "sm" ? "12px" : "13px",
+    fontWeight: "600",
+    fontFamily: f.body,
+    border: `1px solid ${color}40`,
+  }}>
+    {icon && <span>{icon}</span>}
+    {label}
+  </span>
+);
+
+const Section = ({ title, icon = "📖", children, noPadding = false }) => (
+  <div style={{
+    marginBottom: "60px",
+    paddingBottom: "40px",
+    borderBottom: `1px solid ${t.border}`,
+  }}>
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      marginBottom: "32px",
+      paddingLeft: noPadding ? "0" : "20px",
+    }}>
+      <span style={{ fontSize: "32px" }}>{icon}</span>
+      <h2 style={{
+        fontSize: "48px",
+        fontWeight: "700",
+        color: t.text,
+        margin: 0,
+        fontFamily: f.display,
+        letterSpacing: "-1px",
+      }}>
+        {title}
+      </h2>
     </div>
-  );
-}
+    <div style={{ paddingLeft: noPadding ? "0" : "20px" }}>
+      {children}
+    </div>
+  </div>
+);
 
-// ─── Main App ───
-export default function DigitalJamaica() {
-  const [page, setPage] = useState("home");
-  const [sideOpen, setSideOpen] = useState(true);
-  const [guideInput, setGuideInput] = useState("");
-  const [guideMessages, setGuideMessages] = useState([]);
-  const [guideLoading, setGuideLoading] = useState(false);
-  const [selectedParish, setSelectedParish] = useState(null);
-  const [selectedTimeline, setSelectedTimeline] = useState(0);
-  const [expandedCulture, setExpandedCulture] = useState(null);
-  const [activeYouthJourney, setActiveYouthJourney] = useState(null);
-  const [mentorFilter, setMentorFilter] = useState("all");
-  const [returnStep, setReturnStep] = useState(0);
-  const [learnTab, setLearnTab] = useState("history");
-  const guideRef = useRef(null);
+// ============ MAIN COMPONENT ============
+export default function DigitalJamaicaApp() {
+  const [activeTab, setActiveTab] = useState("home");
+  const [user, setUser] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
+  const [forumViewMode, setForumViewMode] = useState("categories");
+  const [selectedForumCategory, setSelectedForumCategory] = useState(null);
+  const [threads, setThreads] = useState(SAMPLE_THREADS);
+  const navRef = useRef(null);
 
+  // ============ AUTH LOGIC ============
   useEffect(() => {
-    if (!document.getElementById("dj-fonts")) {
-      const link = document.createElement("link");
-      link.id = "dj-fonts"; link.rel = "stylesheet"; link.href = FONTS;
-      document.head.appendChild(link);
+    const stored = localStorage.getItem("digital_jamaica_user");
+    if (stored) {
+      try {
+        setUser(JSON.parse(stored));
+      } catch (e) {
+        console.log("Failed to load user");
+      }
     }
   }, []);
 
-  useEffect(() => { if (guideRef.current) guideRef.current.scrollTop = guideRef.current.scrollHeight; }, [guideMessages]);
-
-  const simulateGuide = useCallback((question) => {
-    setGuideLoading(true);
-    const r = {
-      portland: "Portland is Jamaica's lushest parish. It's home to the original jerk cooking tradition, born in the Blue Mountains where the Maroons seasoned and slow-smoked meat over pimento wood. The Rio Grande rafting tradition was started by Errol Flynn. Port Antonio was once one of the most glamorous destinations in the Caribbean. Portland people are known for their warmth, storytelling tradition, and deep connection to the land. The parish has a mystical quality — waterfalls hidden in rainforest, the famous Blue Lagoon, and Reach Falls.",
-      "1970": "The 1970s in Jamaica were electric and turbulent. Michael Manley's democratic socialism brought free education, land reform, and the minimum wage — but also economic crisis and political violence. Bob Marley released Catch a Fire, Natty Dread, Rastaman Vibration, and Exodus. The Smile Jamaica concert in 1976 happened just days after Marley was shot. Kingston's dancehalls were revolutionary spaces. Reggae became the voice of the Third World. It was the decade that shaped modern Jamaica.",
-      saying: "Essential Jamaican expressions:\n\n• 'Wah gwaan' — What's happening?\n• 'Mi deh yah' — I'm here / I'm alright\n• 'Walk good' — Travel safely\n• 'Every hoe ha dem stick a bush' — Everyone has their match\n• 'Cockroach nuh business inna fowl fight' — Don't get involved in others' conflicts\n• 'Sorry fi maga dog, maga dog turn round bite yuh' — Beware of misplaced sympathy\n• 'One one coco full basket' — Steady effort achieves results\n• 'Big up yuhself' — Respect / Celebrate yourself",
-      reggae: "Reggae emerged around 1968 from the evolution of ska and rocksteady. The one-drop drumbeat became its signature. Toots Hibbert is credited with first using the word 'reggae' in 'Do the Reggay' (1968). Bob Marley made reggae a global force. The music was inseparable from Rastafari, Pan-Africanism, and anti-colonial resistance. Studios like Studio One, Channel One, and Black Ark became sacred spaces. Reggae gave voice to the sufferers and became the sound of liberation movements worldwide.",
-      maroon: "The Maroons are among the most remarkable freedom fighters in world history. When the British invaded Jamaica in 1655, enslaved Africans fled to the mountains and formed free communities. Queen Nanny — a National Hero — led the Windward Maroons using brilliant military tactics. Cudjoe led the Leeward Maroons in the Cockpit Country. The British signed peace treaties in 1739-1740 granting the Maroons land and autonomy. Today, Maroon communities like Accompong and Moore Town maintain distinct cultural traditions.",
-    };
-    const q = question.toLowerCase();
-    let resp = `Great question about "${question}"! In a full deployment, the AI Jamaica Guide would provide detailed, culturally authentic responses about Jamaican history, culture, language, and society. Try asking about Portland, the 1970s, Jamaican sayings, reggae, or the Maroons for demo responses.`;
-    for (const [key, val] of Object.entries(r)) { if (q.includes(key)) { resp = val; break; } }
-    setTimeout(() => { setGuideMessages(prev => [...prev, { role: "assistant", content: resp }]); setGuideLoading(false); }, 1200);
-  }, []);
-
-  const handleGuideSend = () => {
-    if (!guideInput.trim()) return;
-    setGuideMessages(prev => [...prev, { role: "user", content: guideInput.trim() }]);
-    const q = guideInput.trim(); setGuideInput(""); simulateGuide(q);
+  const handleRegister = (name, email, password) => {
+    const newUser = { id: Date.now(), name, email, password, joinDate: new Date().toLocaleDateString() };
+    localStorage.setItem("digital_jamaica_user", JSON.stringify(newUser));
+    setUser(newUser);
+    setShowAuthModal(false);
   };
 
-  const navItems = [
-    { id: "home", label: "Home", icon: "🏠" },
-    { id: "learn", label: "Learn Jamaica", icon: "🇯🇲" },
-    { id: "guide", label: "Jamaica Guide", icon: "🤖" },
-    { id: "knowledge", label: "Knowledge Exchange", icon: "🤝" },
-    { id: "youth", label: "Youth Mode", icon: "🌟" },
-    { id: "parishes", label: "Parish Communities", icon: "📍" },
-    { id: "return", label: "Return Guide", icon: "✈️" },
-  ];
+  const handleLogin = (email, password) => {
+    const stored = localStorage.getItem("digital_jamaica_user");
+    if (stored) {
+      const userData = JSON.parse(stored);
+      if (userData.email === email && userData.password === password) {
+        setUser(userData);
+        setShowAuthModal(false);
+      } else {
+        alert("Invalid email or password");
+      }
+    } else {
+      alert("No account found. Please register first.");
+    }
+  };
 
-  // ═══ HOME ═══
-  const HomePage = () => (
+  const handleLogout = () => {
+    localStorage.removeItem("digital_jamaica_user");
+    setUser(null);
+    setActiveTab("home");
+  };
+
+  // ============ FORUM LOGIC ============
+  const handleCreateThread = (title, content, category) => {
+    const newThread = {
+      id: `t${Date.now()}`,
+      category,
+      title,
+      author: user.name,
+      date: new Date().toISOString().split("T")[0],
+      replies: 0,
+      likes: 0,
+      preview: content.substring(0, 100) + "...",
+      content,
+    };
+    setThreads([newThread, ...threads]);
+    setForumViewMode("threads");
+    alert("Thread created successfully!");
+  };
+
+  // ============ RENDER: HOME ============
+  const renderHome = () => (
     <div>
-      <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: `linear-gradient(135deg, ${t.greenDark} 0%, #0A1A0D 40%, #1A0F00 70%, ${t.goldDim}33 100%)`, padding: "60px 48px", marginBottom: 40, border: `1px solid ${t.border}` }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: 0.06, backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(212,160,76,0.5) 35px, rgba(212,160,76,0.5) 36px)", pointerEvents: "none" }} />
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🇯🇲</div>
-          <Badge color={t.goldLight}>The Digital Memory & Learning System</Badge>
-          <h1 style={{ fontFamily: f.display, fontSize: "clamp(36px, 5.5vw, 64px)", fontWeight: 700, color: t.text, margin: "16px 0 0", lineHeight: 1.08, maxWidth: 700 }}>Digital Jamaica</h1>
-          <p style={{ fontFamily: f.display, fontSize: "clamp(18px, 2.5vw, 26px)", fontWeight: 400, fontStyle: "italic", color: t.goldLight, margin: "8px 0 0", maxWidth: 500 }}>Learn · Connect · Contribute</p>
-          <p style={{ fontFamily: f.body, fontSize: 15, color: t.textSec, marginTop: 20, maxWidth: 520, lineHeight: 1.7 }}>A focused platform that helps Jamaicans abroad learn about Jamaica, reconnect with identity and culture, share knowledge, and stay meaningfully engaged with the country.</p>
-          <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap" }}>
-            <button onClick={() => setPage("learn")} style={{ fontFamily: f.body, fontSize: 14, fontWeight: 600, padding: "12px 28px", background: t.gold, color: "#000", border: "none", borderRadius: 8, cursor: "pointer" }}>Start Learning</button>
-            <button onClick={() => setPage("guide")} style={{ fontFamily: f.body, fontSize: 14, fontWeight: 600, padding: "12px 28px", background: "transparent", color: t.gold, border: `1.5px solid ${t.gold}`, borderRadius: 8, cursor: "pointer" }}>Ask the Jamaica Guide</button>
-          </div>
+      <Section title="Welcome to Digital Jamaica" icon="🇯🇲">
+        <p style={{ fontSize: "20px", color: t.textSec, lineHeight: "1.8", marginBottom: "20px" }}>
+          A living digital space celebrating Jamaica's heritage, resilience, and future. Whether you're on the island, in the diaspora, or just discovering Jamaica — this is your home.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px", marginTop: "30px" }}>
+          {[
+            { icon: "📚", title: "Learn Jamaica", desc: "Deep dive into history, music, and culture" },
+            { icon: "🗺️", title: "Jamaica Guide", desc: "Practical information for life on the island" },
+            { icon: "💡", title: "Knowledge Exchange", desc: "Learn from Jamaican experts and mentors" },
+            { icon: "💬", title: "Community Forum", desc: "Connect with thousands of Jamaicans worldwide" },
+          ].map((item, idx) => (
+            <div key={idx} style={{
+              padding: "20px",
+              backgroundColor: t.card,
+              border: `1px solid ${t.border}`,
+              borderRadius: "12px",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+            }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = t.cardHover} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = t.card}>
+              <div style={{ fontSize: "32px", marginBottom: "10px" }}>{item.icon}</div>
+              <h3 style={{ color: t.gold, fontSize: "18px", marginBottom: "8px", fontFamily: f.display }}>{item.title}</h3>
+              <p style={{ color: t.textMut, fontSize: "14px", margin: 0 }}>{item.desc}</p>
+            </div>
+          ))}
         </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 16, marginBottom: 40, flexWrap: "wrap" }}>
-        {[{ v: "2.8M+", l: "Jamaican Diaspora", i: "🌍" }, { v: "14", l: "Parishes to Explore", i: "📍" }, { v: "400+", l: "Years of History", i: "📜" }, { v: "∞", l: "Culture to Share", i: "🎶" }].map((s, i) => (
-          <div key={i} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 12, padding: "20px 24px", flex: 1, minWidth: 140 }}>
-            <div style={{ fontSize: 24, marginBottom: 8 }}>{s.i}</div>
-            <div style={{ fontFamily: f.display, fontSize: 32, fontWeight: 700, color: t.gold, lineHeight: 1 }}>{s.v}</div>
-            <div style={{ fontFamily: f.body, fontSize: 12, color: t.textMut, marginTop: 4, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.l}</div>
-          </div>
-        ))}
-      </div>
-
-      <Section overline="Platform Features" title="Your Cultural & Intellectual Home" subtitle="Not social media. Not fintech. A space for knowledge, belonging, and participation." />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16, marginBottom: 40 }}>
-        {[
-          { icon: "🇯🇲", title: "Learn About Jamaica", desc: "Interactive history, culture, music, and society — powered by AI", pg: "learn" },
-          { icon: "🤖", title: "Jamaica Guide AI", desc: "Ask anything about Jamaica. Culturally authentic, intergenerational.", pg: "guide" },
-          { icon: "🤝", title: "Knowledge Exchange", desc: "Diaspora expertise shared as a national resource", pg: "knowledge" },
-          { icon: "🌟", title: "Youth & Next Gen", desc: "Structured identity learning for children abroad", pg: "youth" },
-          { icon: "📍", title: "Parish Communities", desc: "Reconnect with yard — by parish, school, or interest", pg: "parishes" },
-          { icon: "✈️", title: "Return & Reconnect", desc: "Understanding-based preparation, not just logistics", pg: "return" },
-        ].map((c, i) => (
-          <button key={i} onClick={() => setPage(c.pg)} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 14, padding: "28px 24px", textAlign: "left", cursor: "pointer", transition: "all 0.2s", display: "flex", flexDirection: "column", gap: 12 }}
-            onMouseOver={e => { e.currentTarget.style.borderColor = t.goldDim; e.currentTarget.style.background = t.cardHover; }}
-            onMouseOut={e => { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.background = t.card; }}>
-            <span style={{ fontSize: 32 }}>{c.icon}</span>
-            <span style={{ fontFamily: f.display, fontSize: 20, fontWeight: 600, color: t.text }}>{c.title}</span>
-            <span style={{ fontFamily: f.body, fontSize: 13, color: t.textSec, lineHeight: 1.5 }}>{c.desc}</span>
-          </button>
-        ))}
-      </div>
-
-      <div style={{ background: `linear-gradient(135deg, ${t.goldDim}15, transparent)`, border: `1px solid ${t.goldDim}30`, borderRadius: 16, padding: "40px 36px", textAlign: "center" }}>
-        <div style={{ fontFamily: f.display, fontSize: 28, fontWeight: 600, color: t.gold, marginBottom: 12 }}>The Deeper Vision</div>
-        <p style={{ fontFamily: f.body, fontSize: 15, color: t.textSec, maxWidth: 600, margin: "0 auto", lineHeight: 1.7 }}>Diaspora Jamaicans are connected economically but disconnecting culturally and historically. Digital Jamaica preserves identity while building future engagement — a cultural and intellectual home for Jamaica's global nation.</p>
-        <div style={{ fontFamily: f.body, fontSize: 12, color: t.textMut, marginTop: 20, textTransform: "uppercase", letterSpacing: "0.1em" }}>No remittances · No financial transactions · Just knowledge, belonging & participation</div>
-      </div>
+      </Section>
     </div>
   );
 
-  // ═══ LEARN ═══
-  const LearnPage = () => (
+  // ============ RENDER: LEARN JAMAICA ============
+  const renderLearnJamaica = () => (
     <div>
-      <Section overline="The Core Engine" title="Learn About Jamaica" subtitle="An interactive learning space where you explore history, culture, society, and the Jamaica of today." />
-      <div style={{ display: "flex", gap: 8, marginBottom: 32, flexWrap: "wrap" }}>
-        {[{ id: "history", l: "📜 History" }, { id: "music", l: "🎶 Music" }, { id: "culture", l: "🎭 Culture" }, { id: "today", l: "🌍 Jamaica Today" }].map(tab => (
-          <button key={tab.id} onClick={() => setLearnTab(tab.id)} style={{ fontFamily: f.body, fontSize: 13, fontWeight: learnTab === tab.id ? 600 : 400, padding: "10px 20px", borderRadius: 8, cursor: "pointer", border: "none", background: learnTab === tab.id ? t.gold : t.card, color: learnTab === tab.id ? "#000" : t.textSec, transition: "all 0.15s" }}>{tab.l}</button>
-        ))}
-      </div>
-
-      {learnTab === "history" && (
-        <div>
-          <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
-            {HISTORY_TIMELINE.map((item, i) => (
-              <button key={i} onClick={() => setSelectedTimeline(i)} style={{ fontFamily: f.body, fontSize: 11, fontWeight: 600, padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${selectedTimeline === i ? item.color : t.border}`, background: selectedTimeline === i ? `${item.color}20` : "transparent", color: selectedTimeline === i ? item.color : t.textMut, cursor: "pointer" }}>{item.era}</button>
-            ))}
-          </div>
-          <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 16, padding: 36, position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: 0, left: 0, width: 4, height: "100%", background: HISTORY_TIMELINE[selectedTimeline].color }} />
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-              <span style={{ fontSize: 36 }}>{HISTORY_TIMELINE[selectedTimeline].icon}</span>
-              <Badge color={HISTORY_TIMELINE[selectedTimeline].color}>{HISTORY_TIMELINE[selectedTimeline].period}</Badge>
+      <Section title="Jamaican History" icon="📜">
+        <div style={{ display: "grid", gap: "20px" }}>
+          {HISTORY_TIMELINE.map((item, idx) => (
+            <div key={idx} style={{
+              padding: "20px",
+              backgroundColor: t.card,
+              border: `2px solid ${t.border}`,
+              borderLeft: `4px solid ${t.gold}`,
+              borderRadius: "8px",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "10px" }}>
+                <h3 style={{ color: t.gold, fontSize: "22px", margin: 0, fontFamily: f.display }}>{item.year}</h3>
+                <Badge label={item.event} />
+              </div>
+              <p style={{ color: t.textSec, margin: "8px 0 0 0" }}>{item.details}</p>
             </div>
-            <h3 style={{ fontFamily: f.display, fontSize: 32, fontWeight: 700, color: t.text, margin: "12px 0 16px" }}>{HISTORY_TIMELINE[selectedTimeline].title}</h3>
-            <p style={{ fontFamily: f.body, fontSize: 15, color: t.textSec, lineHeight: 1.8, maxWidth: 640 }}>{HISTORY_TIMELINE[selectedTimeline].desc}</p>
-          </div>
+          ))}
         </div>
-      )}
+      </Section>
 
-      {learnTab === "music" && (
-        <div style={{ position: "relative", paddingLeft: 24 }}>
-          <div style={{ position: "absolute", left: 8, top: 0, bottom: 0, width: 2, background: `linear-gradient(to bottom, ${t.goldDim}, ${t.greenDark})` }} />
-          {MUSIC_EVOLUTION.map((m, i) => (
-            <div key={i} style={{ position: "relative", marginBottom: 24, paddingLeft: 32 }}>
-              <div style={{ position: "absolute", left: -4, top: 8, width: 16, height: 16, borderRadius: "50%", background: m.color, border: `3px solid ${t.bg}` }} />
-              <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 14, padding: "24px 28px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                  <span style={{ fontFamily: f.display, fontSize: 26, fontWeight: 700, color: m.color }}>{m.genre}</span>
-                  <Badge color={m.color}>{m.period}</Badge>
-                </div>
-                <p style={{ fontFamily: f.body, fontSize: 14, color: t.textSec, lineHeight: 1.7, margin: 0 }}>{m.desc}</p>
+      <Section title="Music Evolution" icon="🎵">
+        <div style={{ display: "grid", gap: "20px" }}>
+          {MUSIC_EVOLUTION.map((item, idx) => (
+            <div key={idx} style={{
+              padding: "20px",
+              backgroundColor: t.card,
+              border: `1px solid ${t.border}`,
+              borderRadius: "8px",
+            }}>
+              <h3 style={{ color: t.gold, fontSize: "20px", margin: "0 0 10px 0", fontFamily: f.display }}>{item.era}</h3>
+              <p style={{ color: t.textSec, margin: "0 0 10px 0" }}>{item.style}</p>
+              <div style={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
+                <Badge label={`Artists: ${item.artists}`} color={t.greenLight} />
+                <Badge label={`Example: ${item.example}`} color={t.goldLight} />
               </div>
             </div>
           ))}
         </div>
-      )}
+      </Section>
 
-      {learnTab === "culture" && (
-        <div style={{ display: "grid", gap: 16 }}>
-          {CULTURAL_TOPICS.map((topic, i) => (
-            <div key={i} style={{ background: t.card, border: `1px solid ${expandedCulture === i ? t.goldDim : t.border}`, borderRadius: 14, overflow: "hidden" }}>
-              <button onClick={() => setExpandedCulture(expandedCulture === i ? null : i)} style={{ width: "100%", padding: "20px 24px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 16, textAlign: "left" }}>
-                <span style={{ fontSize: 32 }}>{topic.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: f.display, fontSize: 20, fontWeight: 600, color: t.text }}>{topic.title}</div>
-                  <div style={{ fontFamily: f.body, fontSize: 13, color: t.textSec, marginTop: 4 }}>{topic.preview}</div>
-                </div>
-                <span style={{ fontSize: 18, color: t.textMut, transform: expandedCulture === i ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▼</span>
-              </button>
-              {expandedCulture === i && (
-                <div style={{ padding: "0 24px 24px", borderTop: `1px solid ${t.border}` }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10, paddingTop: 16 }}>
-                    {topic.items.map((item, j) => (
-                      <div key={j} style={{ background: t.cardHover, borderRadius: 8, padding: "12px 16px", fontFamily: f.body, fontSize: 13, color: t.textSec, lineHeight: 1.5, borderLeft: `3px solid ${t.goldDim}` }}>{item}</div>
-                    ))}
-                  </div>
-                </div>
-              )}
+      <Section title="Culture & Identity" icon="🎭">
+        <div style={{ display: "grid", gap: "20px" }}>
+          {CULTURAL_TOPICS.map((item, idx) => (
+            <div key={idx} style={{
+              padding: "20px",
+              backgroundColor: t.card,
+              border: `1px solid ${t.border}`,
+              borderRadius: "8px",
+            }}>
+              <h3 style={{ color: t.gold, fontSize: "20px", margin: "0 0 10px 0", fontFamily: f.display }}>{item.title}</h3>
+              <p style={{ color: t.textSec, margin: "0 0 10px 0" }}>{item.description}</p>
+              <p style={{ color: t.textMut, fontSize: "14px", margin: "0", fontStyle: "italic" }}>{item.deeper}</p>
             </div>
           ))}
         </div>
-      )}
+      </Section>
+    </div>
+  );
 
-      {learnTab === "today" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          {[
-            { icon: "💡", title: "Innovation & Tech", items: ["Growing tech startup ecosystem", "Silicon Mountain (Montego Bay)", "Digital transformation initiatives", "Coding bootcamps and hackathons"] },
-            { icon: "🌱", title: "Youth Culture", items: ["Social media creators making waves", "New music genres emerging", "Entrepreneurial energy", "Climate activism growing"] },
-            { icon: "🏗️", title: "Development", items: ["Highway 2000 network", "Logistics Hub Initiative", "Renewable energy targets", "Tourism diversification"] },
-            { icon: "🎯", title: "Challenges", items: ["Crime and public safety", "Brain drain and migration", "Climate vulnerability", "Economic inequality"] },
-          ].map((sec, i) => (
-            <div key={i} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 14, padding: "28px 24px" }}>
-              <span style={{ fontSize: 32 }}>{sec.icon}</span>
-              <h3 style={{ fontFamily: f.display, fontSize: 22, fontWeight: 600, color: t.text, margin: "12px 0 16px" }}>{sec.title}</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {sec.items.map((item, j) => (
-                  <div key={j} style={{ fontFamily: f.body, fontSize: 13, color: t.textSec, paddingLeft: 16, position: "relative", lineHeight: 1.5 }}>
-                    <span style={{ position: "absolute", left: 0, color: t.goldDim }}>—</span>{item}
+  // ============ RENDER: JAMAICA GUIDE ============
+  const renderJamaicaGuide = () => (
+    <div>
+      <Section title="Parish Profiles" icon="📍">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
+          {PARISHES.map((parish, idx) => (
+            <div key={idx} style={{
+              padding: "20px",
+              backgroundColor: t.card,
+              border: `1px solid ${t.border}`,
+              borderRadius: "8px",
+            }}>
+              <h3 style={{ color: t.gold, fontSize: "20px", margin: "0 0 8px 0", fontFamily: f.display }}>{parish.name}</h3>
+              <p style={{ color: t.textSec, fontSize: "14px", margin: "0 0 12px 0" }}>Pop: {parish.population}</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {parish.highlights.map((hl, i) => (
+                  <div key={i} style={{ color: t.textMut, fontSize: "13px" }}>• {hl}</div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="FAQ & Guide" icon="❓">
+        <div style={{ display: "grid", gap: "20px" }}>
+          {GUIDE_QUESTIONS.map((item, idx) => (
+            <details key={idx} style={{
+              padding: "20px",
+              backgroundColor: t.card,
+              border: `1px solid ${t.border}`,
+              borderRadius: "8px",
+            }}>
+              <summary style={{ color: t.gold, fontSize: "16px", fontWeight: "700", cursor: "pointer", fontFamily: f.display }}>
+                {item.q}
+              </summary>
+              <p style={{ color: t.textSec, margin: "12px 0 0 0" }}>{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+
+  // ============ RENDER: KNOWLEDGE EXCHANGE ============
+  const renderKnowledgeExchange = () => (
+    <div>
+      <Section title="Meet Our Mentors" icon="👨‍🏫">
+        <div style={{ display: "grid", gap: "40px" }}>
+          {KNOWLEDGE_CATEGORIES.map((cat, idx) => (
+            <div key={idx}>
+              <h3 style={{ color: t.gold, fontSize: "28px", margin: "0 0 20px 0", fontFamily: f.display }}>{cat.title}</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
+                {cat.mentors.map((mentor, midx) => (
+                  <div key={midx} style={{
+                    padding: "20px",
+                    backgroundColor: t.card,
+                    border: `2px solid ${t.gold}`,
+                    borderRadius: "8px",
+                  }}>
+                    <h4 style={{ color: t.text, fontSize: "18px", margin: "0 0 8px 0", fontFamily: f.display }}>{mentor.name}</h4>
+                    <Badge label={mentor.expertise} color={t.greenLight} size="sm" />
+                    <p style={{ color: t.textSec, fontSize: "14px", margin: "12px 0 0 0" }}>{mentor.bio}</p>
                   </div>
                 ))}
               </div>
             </div>
           ))}
         </div>
-      )}
-    </div>
-  );
+      </Section>
 
-  // ═══ GUIDE ═══
-  const GuidePage = () => (
-    <div>
-      <Section overline="AI-Powered" title="Jamaica Guide" subtitle="Ask anything about Jamaica — history, culture, language, society. Designed for all generations." />
-      {guideMessages.length === 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontFamily: f.body, fontSize: 12, fontWeight: 600, color: t.textMut, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>Try asking:</div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {GUIDE_QUESTIONS.map((q, i) => (
-              <button key={i} onClick={() => { setGuideMessages([{ role: "user", content: q }]); simulateGuide(q); }} style={{ fontFamily: f.body, fontSize: 12, padding: "8px 16px", borderRadius: 20, background: t.card, border: `1px solid ${t.border}`, color: t.textSec, cursor: "pointer" }}
-                onMouseOver={e => { e.currentTarget.style.borderColor = t.goldDim; e.currentTarget.style.color = t.gold; }}
-                onMouseOut={e => { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.color = t.textSec; }}>"{q}"</button>
-            ))}
-          </div>
-        </div>
-      )}
-      <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 16, height: 480, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div ref={guideRef} style={{ flex: 1, overflow: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-          {guideMessages.length === 0 && (
-            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
-              <span style={{ fontSize: 48 }}>🇯🇲</span>
-              <span style={{ fontFamily: f.display, fontSize: 22, color: t.textMut }}>Ask me anything about Jamaica</span>
-            </div>
-          )}
-          {guideMessages.map((msg, i) => (
-            <div key={i} style={{ alignSelf: msg.role === "user" ? "flex-end" : "flex-start", maxWidth: "80%" }}>
-              <div style={{ background: msg.role === "user" ? t.gold : t.cardHover, color: msg.role === "user" ? "#000" : t.text, borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px", padding: "14px 18px", fontFamily: f.body, fontSize: 14, lineHeight: 1.7, border: msg.role === "user" ? "none" : `1px solid ${t.border}`, whiteSpace: "pre-wrap" }}>{msg.content}</div>
+      <Section title="Youth Stories" icon="⭐">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
+          {YOUTH_JOURNEYS.map((youth, idx) => (
+            <div key={idx} style={{
+              padding: "20px",
+              backgroundColor: t.card,
+              border: `1px solid ${t.border}`,
+              borderRadius: "8px",
+            }}>
+              <h3 style={{ color: t.gold, fontSize: "18px", margin: "0 0 8px 0", fontFamily: f.display }}>{youth.name}, {youth.age}</h3>
+              <Badge label={youth.location} color={t.blue} size="sm" icon="📍" />
+              <p style={{ color: t.textSec, margin: "12px 0 0 0" }}><strong>Dream:</strong> {youth.dream}</p>
+              <p style={{ color: t.textMut, fontSize: "14px", margin: "8px 0" }}>{youth.story}</p>
+              <Badge label={youth.achievement} color={t.greenLight} size="sm" icon="🏆" />
             </div>
           ))}
-          {guideLoading && <div style={{ alignSelf: "flex-start" }}><div style={{ background: t.cardHover, borderRadius: "16px 16px 16px 4px", padding: "14px 18px", border: `1px solid ${t.border}`, fontFamily: f.body, fontSize: 14, color: t.textMut }}><span style={{ animation: "pulse 1.5s infinite" }}>Thinking about Jamaica...</span></div></div>}
         </div>
-        <div style={{ padding: 16, borderTop: `1px solid ${t.border}`, display: "flex", gap: 12 }}>
-          <input value={guideInput} onChange={e => setGuideInput(e.target.value)} onKeyDown={e => e.key === "Enter" && handleGuideSend()} placeholder="Ask about Jamaica's history, culture, language..." style={{ flex: 1, fontFamily: f.body, fontSize: 14, padding: "12px 16px", background: t.bg, border: `1px solid ${t.border}`, borderRadius: 10, color: t.text, outline: "none" }} />
-          <button onClick={handleGuideSend} style={{ fontFamily: f.body, fontSize: 14, fontWeight: 600, padding: "12px 24px", background: t.gold, color: "#000", border: "none", borderRadius: 10, cursor: "pointer" }}>Send</button>
-        </div>
-      </div>
+      </Section>
     </div>
   );
 
-  // ═══ KNOWLEDGE ═══
-  const KnowledgePage = () => (
+  // ============ RENDER: ECONOMY & INNOVATION ============
+  const renderEconomy = () => (
     <div>
-      <Section overline="Diaspora Expertise" title="Knowledge Exchange" subtitle="Contribute your expertise. Career talks, recorded lessons, advice, and professional mentoring." />
-      <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
-        {["all", ...KNOWLEDGE_CATEGORIES.map(c => c.id)].map(flt => (
-          <button key={flt} onClick={() => setMentorFilter(flt)} style={{ fontFamily: f.body, fontSize: 12, fontWeight: mentorFilter === flt ? 600 : 400, padding: "8px 16px", borderRadius: 20, cursor: "pointer", border: "none", background: mentorFilter === flt ? t.gold : t.card, color: mentorFilter === flt ? "#000" : t.textSec }}>{flt === "all" ? "All Areas" : KNOWLEDGE_CATEGORIES.find(c => c.id === flt)?.title}</button>
-        ))}
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16, marginBottom: 32 }}>
-        {KNOWLEDGE_CATEGORIES.filter(c => mentorFilter === "all" || c.id === mentorFilter).map((cat, i) => (
-          <div key={i} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 14, padding: "28px 24px" }}>
-            <span style={{ fontSize: 36 }}>{cat.icon}</span>
-            <h3 style={{ fontFamily: f.display, fontSize: 20, fontWeight: 600, color: t.text, margin: "12px 0 8px" }}>{cat.title}</h3>
-            <p style={{ fontFamily: f.body, fontSize: 13, color: t.textSec, margin: "0 0 16px", lineHeight: 1.5 }}>{cat.desc}</p>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Badge>{cat.count} contributors</Badge>
-              <button style={{ fontFamily: f.body, fontSize: 12, fontWeight: 600, padding: "6px 16px", background: "transparent", border: `1px solid ${t.goldDim}`, borderRadius: 6, color: t.gold, cursor: "pointer" }}>Contribute</button>
+      <Section title="Tech Ecosystem" icon="💻">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px", marginBottom: "40px" }}>
+          {TECH_ECOSYSTEM.map((item, idx) => (
+            <div key={idx} style={{
+              padding: "20px",
+              backgroundColor: t.card,
+              border: `2px solid ${item.color}40`,
+              borderLeft: `4px solid ${item.color}`,
+              borderRadius: "8px",
+            }}>
+              <div style={{ fontSize: "32px", marginBottom: "10px" }}>{item.icon}</div>
+              <h3 style={{ color: item.color, fontSize: "18px", margin: "0 0 8px 0", fontFamily: f.display }}>{item.title}</h3>
+              <p style={{ color: t.textSec, fontSize: "14px", margin: 0 }}>{item.desc}</p>
             </div>
-          </div>
-        ))}
-      </div>
-      <Section overline="Featured Mentors" title="Jamaicans Giving Back" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
-        {[
-          { name: "Dr. Andrea Campbell", loc: "Toronto, Canada", field: "Education", exp: "University admissions & scholarship strategy", yrs: "15 years" },
-          { name: "Marcus Thompson", loc: "London, UK", field: "Technology", exp: "Software engineering & career pivots", yrs: "12 years" },
-          { name: "Sharon Reid-Brown", loc: "New York, USA", field: "Healthcare", exp: "Nursing careers & healthcare pathways", yrs: "20 years" },
-          { name: "Kevin Williams", loc: "Miami, USA", field: "Business", exp: "Entrepreneurship & market entry", yrs: "10 years" },
-        ].map((m, i) => (
-          <div key={i} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 14, padding: "24px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ width: 48, height: 48, borderRadius: "50%", background: `${t.gold}20`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: f.display, fontSize: 20, fontWeight: 700, color: t.gold }}>{m.name.split(" ").map(n => n[0]).join("")}</div>
-            <div style={{ fontFamily: f.display, fontSize: 18, fontWeight: 600, color: t.text }}>{m.name}</div>
-            <div style={{ fontFamily: f.body, fontSize: 12, color: t.textMut }}>📍 {m.loc} · {m.yrs}</div>
-            <Badge color={t.greenLight}>{m.field}</Badge>
-            <div style={{ fontFamily: f.body, fontSize: 13, color: t.textSec, lineHeight: 1.5 }}>{m.exp}</div>
-            <button style={{ fontFamily: f.body, fontSize: 12, fontWeight: 600, padding: "8px 16px", background: t.gold, color: "#000", border: "none", borderRadius: 6, cursor: "pointer", marginTop: 8, alignSelf: "flex-start" }}>Request Mentoring</button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Economic Stats (2024)" icon="📊">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" }}>
+          {ECONOMY_STATS.map((stat, idx) => (
+            <div key={idx} style={{
+              padding: "20px",
+              backgroundColor: t.card,
+              border: `1px solid ${t.border}`,
+              borderRadius: "8px",
+              textAlign: "center",
+            }}>
+              <div style={{ fontSize: "28px", marginBottom: "8px" }}>{stat.icon}</div>
+              <p style={{ color: t.textMut, fontSize: "13px", margin: "0 0 8px 0" }}>{stat.label}</p>
+              <p style={{ color: t.gold, fontSize: "24px", fontWeight: "700", margin: 0, fontFamily: f.display }}>{stat.value}</p>
+            </div>
+          ))}
+        </div>
+      </Section>
     </div>
   );
 
-  // ═══ YOUTH ═══
-  const YouthPage = () => (
+  // ============ RENDER: SPORTS ============
+  const renderSports = () => (
     <div>
-      <Section overline="Next Generation" title="Discover Jamaica" subtitle="Structured learning pathways for children abroad — parents finally have a way to teach identity, heritage, and culture." />
-      {!activeYouthJourney ? (
-        <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 20 }}>
-            {YOUTH_JOURNEYS.map((j, i) => (
-              <div key={i} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 16, overflow: "hidden" }}>
-                <div style={{ height: 8, background: j.color }} />
-                <div style={{ padding: "28px 24px" }}>
-                  <span style={{ fontSize: 40 }}>{j.icon}</span>
-                  <h3 style={{ fontFamily: f.display, fontSize: 24, fontWeight: 700, color: t.text, margin: "12px 0 4px" }}>{j.title}</h3>
-                  <Badge color={j.color}>Ages {j.age}</Badge>
-                  <p style={{ fontFamily: f.body, fontSize: 13, color: t.textSec, margin: "12px 0 20px", lineHeight: 1.6 }}>{j.desc}</p>
-                  <div style={{ fontFamily: f.body, fontSize: 12, color: t.textMut, marginBottom: 16 }}>{j.modules} modules</div>
-                  <button onClick={() => setActiveYouthJourney(j)} style={{ width: "100%", fontFamily: f.body, fontSize: 13, fontWeight: 600, padding: "10px 0", background: j.color, color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" }}>Start Journey</button>
-                </div>
+      <Section title="Jamaican Sports Legacy" icon="🏆">
+        <p style={{ fontSize: "18px", color: t.textSec, marginBottom: "30px" }}>
+          Jamaica punches far above its weight in global athletics. From Usain Bolt's supersonic sprints to the Reggae Girlz' historic World Cup runs, Jamaican athletes embody excellence, resilience, and pride.
+        </p>
+        <div style={{ display: "grid", gap: "20px" }}>
+          {SPORTS_DATA.map((sport, idx) => (
+            <div key={idx} style={{
+              padding: "24px",
+              backgroundColor: t.card,
+              border: `2px solid ${sport.color}40`,
+              borderLeft: `4px solid ${sport.color}`,
+              borderRadius: "8px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                <span style={{ fontSize: "32px" }}>{sport.icon}</span>
+                <h3 style={{ color: sport.color, fontSize: "22px", margin: 0, fontFamily: f.display }}>{sport.title}</h3>
               </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 32 }}>
-            <Section overline="Family Feature" title="Heritage Tracking" subtitle="Document and preserve your family's Jamaican story for future generations." />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
-              {[{ icon: "🌳", title: "Family Tree", d: "Map your Jamaican lineage" }, { icon: "📷", title: "Photo Archive", d: "Preserve family photos and stories" }, { icon: "📍", title: "Parish Roots", d: "Pin your family's origin parishes" }, { icon: "📖", title: "Oral History", d: "Record family stories and traditions" }].map((item, i) => (
-                <div key={i} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 12, padding: "24px 20px", textAlign: "center" }}>
-                  <span style={{ fontSize: 32 }}>{item.icon}</span>
-                  <div style={{ fontFamily: f.display, fontSize: 17, fontWeight: 600, color: t.text, margin: "8px 0 4px" }}>{item.title}</div>
-                  <div style={{ fontFamily: f.body, fontSize: 12, color: t.textSec }}>{item.d}</div>
+              <p style={{ color: t.textSec, margin: "0 0 12px 0" }}>{sport.desc}</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {sport.highlights.map((hl, i) => (
+                  <div key={i} style={{ color: t.textMut, fontSize: "14px" }}>• {hl}</div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+
+  // ============ RENDER: ENVIRONMENT ============
+  const renderEnvironment = () => (
+    <div>
+      <Section title="Jamaica's Natural Heritage" icon="🌿">
+        <p style={{ fontSize: "18px", color: t.textSec, marginBottom: "30px" }}>
+          Jamaica is a biodiversity hotspot with 28 endemic bird species, 3,000+ plant species, and critical ecosystems from Blue Mountains to coral reefs. Conservation and sustainability are key to Jamaica's future.
+        </p>
+        <div style={{ display: "grid", gap: "20px" }}>
+          {ENVIRONMENT_DATA.map((env, idx) => (
+            <div key={idx} style={{
+              padding: "24px",
+              backgroundColor: t.card,
+              border: `1px solid ${t.border}`,
+              borderRadius: "8px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                <span style={{ fontSize: "32px" }}>{env.icon}</span>
+                <h3 style={{ color: t.greenLight, fontSize: "20px", margin: 0, fontFamily: f.display }}>{env.title}</h3>
+              </div>
+              <p style={{ color: t.textSec, margin: 0 }}>{env.desc}</p>
+            </div>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+
+  // ============ RENDER: FORUM ============
+  const renderForum = () => {
+    if (forumViewMode === "categories") {
+      return (
+        <div>
+          <Section title="Community Forum" icon="💬">
+            <p style={{ fontSize: "16px", color: t.textSec, marginBottom: "30px" }}>
+              Connect with thousands of Jamaicans across the globe. Ask questions, share experiences, and build community.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
+              {FORUM_CATEGORIES.map((cat, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    setSelectedForumCategory(cat.id);
+                    setForumViewMode("threads");
+                  }}
+                  style={{
+                    padding: "24px",
+                    backgroundColor: t.card,
+                    border: `2px solid ${cat.color}40`,
+                    borderLeft: `4px solid ${cat.color}`,
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = t.cardHover;
+                    e.currentTarget.style.transform = "translateY(-4px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = t.card;
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }}
+                >
+                  <div style={{ fontSize: "32px", marginBottom: "10px" }}>{cat.icon}</div>
+                  <h3 style={{ color: cat.color, fontSize: "18px", margin: "0 0 8px 0", fontFamily: f.display }}>{cat.title}</h3>
+                  <p style={{ color: t.textMut, fontSize: "13px", margin: "0 0 12px 0" }}>{cat.desc}</p>
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    <Badge label={`${cat.threads} threads`} color={cat.color} size="sm" />
+                    <Badge label={`${cat.posts} posts`} color={cat.color} size="sm" />
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-        </>
-      ) : (
-        <div>
-          <button onClick={() => setActiveYouthJourney(null)} style={{ fontFamily: f.body, fontSize: 13, padding: "8px 16px", background: t.card, border: `1px solid ${t.border}`, borderRadius: 8, color: t.textSec, cursor: "pointer", marginBottom: 24 }}>← Back to all journeys</button>
-          <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 16, padding: 36 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
-              <span style={{ fontSize: 48 }}>{activeYouthJourney.icon}</span>
-              <div>
-                <h2 style={{ fontFamily: f.display, fontSize: 32, fontWeight: 700, color: t.text, margin: 0 }}>{activeYouthJourney.title}</h2>
-                <Badge color={activeYouthJourney.color}>Ages {activeYouthJourney.age} · {activeYouthJourney.modules} modules</Badge>
-              </div>
+          </Section>
+
+          <Section title="Community Guidelines" icon="📋">
+            <div style={{ display: "grid", gap: "15px" }}>
+              {COMMUNITY_GUIDELINES.map((item, idx) => (
+                <div key={idx} style={{
+                  padding: "16px",
+                  backgroundColor: t.card,
+                  border: `1px solid ${t.border}`,
+                  borderRadius: "8px",
+                }}>
+                  <h4 style={{ color: t.gold, fontSize: "16px", margin: "0 0 6px 0", fontFamily: f.display }}>{item.rule}</h4>
+                  <p style={{ color: t.textSec, fontSize: "14px", margin: 0 }}>{item.desc}</p>
+                </div>
+              ))}
             </div>
-            {activeYouthJourney.id === "explorer" ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-                {PARISHES.map((p, i) => (
-                  <div key={i} style={{ background: t.cardHover, border: `1px solid ${t.border}`, borderRadius: 10, padding: "16px 20px", cursor: "pointer" }}
-                    onMouseOver={e => e.currentTarget.style.borderColor = activeYouthJourney.color}
-                    onMouseOut={e => e.currentTarget.style.borderColor = t.border}>
-                    <div style={{ fontSize: 24, marginBottom: 4 }}>{p.icon}</div>
-                    <div style={{ fontFamily: f.display, fontSize: 16, fontWeight: 600, color: t.text }}>{p.name}</div>
-                    <div style={{ fontFamily: f.body, fontSize: 11, color: t.textMut, marginTop: 4 }}>{p.vibe}</div>
-                  </div>
-                ))}
+          </Section>
+        </div>
+      );
+    } else if (forumViewMode === "threads") {
+      const category = FORUM_CATEGORIES.find((c) => c.id === selectedForumCategory);
+      const categoryThreads = threads.filter((t) => t.category === selectedForumCategory);
+
+      return (
+        <div>
+          <div style={{ marginBottom: "30px" }}>
+            <button
+              onClick={() => setForumViewMode("categories")}
+              style={{
+                padding: "10px 16px",
+                backgroundColor: t.border,
+                color: t.text,
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontFamily: f.body,
+              }}
+            >
+              ← Back to Categories
+            </button>
+          </div>
+
+          <Section title={`${category?.title || "Threads"}`} icon={category?.icon || "💬"} noPadding={true}>
+            {user && (
+              <button
+                onClick={() => setForumViewMode("new-thread")}
+                style={{
+                  padding: "12px 24px",
+                  backgroundColor: t.gold,
+                  color: t.bg,
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  fontFamily: f.body,
+                  marginBottom: "30px",
+                  marginLeft: "20px",
+                }}
+              >
+                + New Thread
+              </button>
+            )}
+            {!user && (
+              <div style={{
+                padding: "16px",
+                backgroundColor: t.card,
+                border: `1px solid ${t.gold}40`,
+                borderRadius: "6px",
+                color: t.textSec,
+                marginBottom: "30px",
+                marginLeft: "20px",
+                marginRight: "20px",
+              }}>
+                <a
+                  onClick={() => {
+                    setShowAuthModal(true);
+                    setAuthMode("login");
+                  }}
+                  style={{ color: t.gold, cursor: "pointer", textDecoration: "underline" }}
+                >
+                  Log in
+                </a>
+                {" "} to create a thread.
               </div>
-            ) : activeYouthJourney.id === "historian" ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {HISTORY_TIMELINE.map((h, i) => (
-                  <div key={i} style={{ background: t.cardHover, border: `1px solid ${t.border}`, borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "center", gap: 16 }}>
-                    <span style={{ fontSize: 28 }}>{h.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: f.display, fontSize: 16, fontWeight: 600, color: t.text }}>{h.title}</div>
-                      <div style={{ fontFamily: f.body, fontSize: 12, color: t.textMut }}>{h.period}</div>
-                    </div>
-                    <button style={{ fontFamily: f.body, fontSize: 11, fontWeight: 600, padding: "6px 14px", background: activeYouthJourney.color, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>Explore</button>
+            )}
+
+            <div style={{ paddingLeft: "20px", paddingRight: "20px", display: "grid", gap: "16px" }}>
+              {categoryThreads.map((thread) => (
+                <div
+                  key={thread.id}
+                  style={{
+                    padding: "20px",
+                    backgroundColor: thread.pinned ? `${t.gold}15` : t.card,
+                    border: `1px solid ${thread.pinned ? t.gold : t.border}`,
+                    borderRadius: "8px",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "12px" }}>
+                    <h3 style={{ color: t.text, fontSize: "16px", margin: 0, fontFamily: f.display, flex: 1 }}>
+                      {thread.pinned && "📌 "}
+                      {thread.title}
+                    </h3>
                   </div>
+                  <p style={{ color: t.textMut, fontSize: "13px", margin: "0 0 12px 0" }}>
+                    by {thread.author} • {thread.date}
+                  </p>
+                  <p style={{ color: t.textSec, fontSize: "14px", margin: "0 0 12px 0" }}>{thread.preview}</p>
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    <Badge label={`${thread.replies} replies`} color={t.textMut} size="sm" />
+                    <Badge label={`${thread.likes} likes`} color={t.gold} size="sm" icon="👍" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        </div>
+      );
+    } else if (forumViewMode === "new-thread") {
+      return (
+        <NewThreadForm
+          category={selectedForumCategory}
+          onBack={() => setForumViewMode("threads")}
+          onSubmit={handleCreateThread}
+        />
+      );
+    }
+  };
+
+  // ============ RENDER: YOUTH MODE ============
+  const renderYouthMode = () => (
+    <div>
+      <Section title="Youth Mode" icon="🎒">
+        <p style={{ fontSize: "18px", color: t.textSec, marginBottom: "30px" }}>
+          Designed for young Jamaicans. Find mentorship, opportunities, scholarships, and connect with your peers.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
+          {[
+            { icon: "🎓", title: "Scholarships & Education", desc: "Find funding for higher education locally and abroad." },
+            { icon: "💼", title: "Internships & Jobs", desc: "Explore opportunities in tech, business, and creative fields." },
+            { icon: "👥", title: "Mentorship", desc: "Get matched with established professionals in your field." },
+            { icon: "🚀", title: "Entrepreneurship", desc: "Start your own business with guidance and resources." },
+          ].map((item, idx) => (
+            <div key={idx} style={{
+              padding: "20px",
+              backgroundColor: t.card,
+              border: `2px solid ${t.green}40`,
+              borderLeft: `4px solid ${t.green}`,
+              borderRadius: "8px",
+            }}>
+              <div style={{ fontSize: "32px", marginBottom: "10px" }}>{item.icon}</div>
+              <h3 style={{ color: t.green, fontSize: "18px", margin: "0 0 8px 0", fontFamily: f.display }}>{item.title}</h3>
+              <p style={{ color: t.textSec, fontSize: "14px", margin: 0 }}>{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+
+  // ============ RENDER: PARISH COMMUNITIES ============
+  const renderParishCommunities = () => (
+    <div>
+      <Section title="Parish Communities" icon="🗺️">
+        <p style={{ fontSize: "18px", color: t.textSec, marginBottom: "30px" }}>
+          Connect with people from your parish. Share news, events, opportunities, and community pride.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
+          {PARISHES.slice(0, 6).map((parish, idx) => (
+            <div key={idx} style={{
+              padding: "20px",
+              backgroundColor: t.card,
+              border: `2px solid ${t.blue}40`,
+              borderLeft: `4px solid ${t.blue}`,
+              borderRadius: "8px",
+            }}>
+              <h3 style={{ color: t.blue, fontSize: "18px", margin: "0 0 8px 0", fontFamily: f.display }}>{parish.name}</h3>
+              <p style={{ color: t.textMut, fontSize: "13px", margin: "0 0 12px 0" }}>Population: {parish.population}</p>
+              <button style={{
+                padding: "8px 16px",
+                backgroundColor: t.blue,
+                color: t.bg,
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: "700",
+                fontFamily: f.body,
+              }}>
+                Join {parish.name} Community
+              </button>
+            </div>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+
+  // ============ RENDER: RETURN GUIDE ============
+  const renderReturnGuide = () => (
+    <div>
+      <Section title="Guide to Returning to Jamaica" icon="✈️">
+        <div style={{ display: "grid", gap: "30px" }}>
+          {[
+            {
+              title: "Before You Return",
+              points: [
+                "Research employment and business opportunities",
+                "Understand cost of living and housing markets",
+                "Arrange healthcare and insurance",
+                "Connect with diaspora return programs",
+                "Plan your finances and tax obligations",
+              ],
+            },
+            {
+              title: "Upon Arrival",
+              points: [
+                "Register with local authorities if necessary",
+                "Establish banking and financial accounts",
+                "Find accommodation and settle in",
+                "Network with local communities and professionals",
+                "Explore your parish and get to know neighbors",
+              ],
+            },
+            {
+              title: "Long-Term Success",
+              points: [
+                "Build meaningful relationships and friendships",
+                "Contribute to community development",
+                "Explore mentorship and knowledge-sharing opportunities",
+                "Stay connected with diaspora networks",
+                "Embrace Jamaica as your home while maintaining global perspective",
+              ],
+            },
+          ].map((section, idx) => (
+            <div key={idx} style={{
+              padding: "24px",
+              backgroundColor: t.card,
+              border: `2px solid ${t.gold}40`,
+              borderLeft: `4px solid ${t.gold}`,
+              borderRadius: "8px",
+            }}>
+              <h3 style={{ color: t.gold, fontSize: "20px", margin: "0 0 16px 0", fontFamily: f.display }}>{section.title}</h3>
+              <ul style={{ margin: 0, paddingLeft: "20px" }}>
+                {section.points.map((point, pidx) => (
+                  <li key={pidx} style={{ color: t.textSec, fontSize: "15px", marginBottom: "10px" }}>
+                    {point}
+                  </li>
                 ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+
+  // ============ MAIN RENDER ============
+  return (
+    <div style={{
+      backgroundColor: t.bg,
+      color: t.text,
+      fontFamily: f.body,
+      minHeight: "100vh",
+      paddingBottom: "80px",
+    }}>
+      {/* NAVIGATION */}
+      <nav style={{
+        position: "sticky",
+        top: 0,
+        backgroundColor: t.surface,
+        borderBottom: `1px solid ${t.border}`,
+        zIndex: 1000,
+        padding: "0 20px",
+      }}>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          overflowX: "auto",
+          overflowY: "hidden",
+          scrollBehavior: "smooth",
+        }} ref={navRef}>
+          <div style={{ display: "flex", gap: "0", minWidth: "max-content" }}>
+            {[
+              { id: "home", label: "Home", icon: "🏠" },
+              { id: "learn", label: "Learn Jamaica", icon: "📚" },
+              { id: "guide", label: "Guide", icon: "🗺️" },
+              { id: "knowledge", label: "Knowledge", icon: "💡" },
+              { id: "economy", label: "Economy", icon: "💼" },
+              { id: "sports", label: "Sports", icon: "🏆" },
+              { id: "environment", label: "Environment", icon: "🌿" },
+              { id: "youth", label: "Youth Mode", icon: "🎒" },
+              { id: "parish", label: "Parishes", icon: "📍" },
+              { id: "return", label: "Return Guide", icon: "✈️" },
+              { id: "forum", label: "Forum", icon: "💬" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setForumViewMode("categories");
+                }}
+                style={{
+                  padding: "16px 20px",
+                  backgroundColor: activeTab === tab.id ? t.gold : "transparent",
+                  color: activeTab === tab.id ? t.bg : t.textSec,
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: activeTab === tab.id ? "700" : "500",
+                  fontFamily: f.body,
+                  whiteSpace: "nowrap",
+                  transition: "all 0.2s ease",
+                  borderBottom: activeTab === tab.id ? `3px solid ${t.gold}` : "none",
+                }}
+                onMouseEnter={(e) => {
+                  if (activeTab !== tab.id) {
+                    e.currentTarget.style.backgroundColor = t.border;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeTab !== tab.id) {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }
+                }}
+              >
+                <span style={{ marginRight: "6px" }}>{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* AUTH BUTTON */}
+          <div style={{ marginLeft: "20px", minWidth: "max-content" }}>
+            {user ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span style={{ fontSize: "13px", color: t.textSec }}>👤 {user.name}</span>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: t.red,
+                    color: t.bg,
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    fontFamily: f.body,
+                  }}
+                >
+                  Logout
+                </button>
               </div>
             ) : (
-              <div style={{ textAlign: "center", padding: "60px 20px", color: t.textMut, fontFamily: f.body, fontSize: 15 }}>
-                <span style={{ fontSize: 48, display: "block", marginBottom: 12 }}>{activeYouthJourney.icon}</span>
-                Interactive modules coming soon!
-              </div>
+              <button
+                onClick={() => {
+                  setShowAuthModal(true);
+                  setAuthMode("login");
+                }}
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: t.gold,
+                  color: t.bg,
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: "700",
+                  fontFamily: f.body,
+                }}
+              >
+                Login / Register
+              </button>
             )}
           </div>
         </div>
+      </nav>
+
+      {/* MAIN CONTENT */}
+      <div style={{
+        maxWidth: "1400px",
+        margin: "0 auto",
+        padding: "40px 20px",
+      }}>
+        {activeTab === "home" && renderHome()}
+        {activeTab === "learn" && renderLearnJamaica()}
+        {activeTab === "guide" && renderJamaicaGuide()}
+        {activeTab === "knowledge" && renderKnowledgeExchange()}
+        {activeTab === "economy" && renderEconomy()}
+        {activeTab === "sports" && renderSports()}
+        {activeTab === "environment" && renderEnvironment()}
+        {activeTab === "youth" && renderYouthMode()}
+        {activeTab === "parish" && renderParishCommunities()}
+        {activeTab === "return" && renderReturnGuide()}
+        {activeTab === "forum" && renderForum()}
+      </div>
+
+      {/* AUTH MODAL */}
+      {showAuthModal && (
+        <AuthModal
+          mode={authMode}
+          onClose={() => setShowAuthModal(false)}
+          onSwitchMode={() => setAuthMode(authMode === "login" ? "register" : "login")}
+          onRegister={handleRegister}
+          onLogin={handleLogin}
+        />
       )}
+
+      {/* FOOTER */}
+      <footer style={{
+        padding: "40px 20px",
+        textAlign: "center",
+        borderTop: `1px solid ${t.border}`,
+        color: t.textMut,
+        fontSize: "14px",
+      }}>
+        <p>Created by Rohan Jowallah • Celebrating Jamaica's Heritage & Future</p>
+        <p style={{ margin: "8px 0 0 0" }}>© 2026 Digital Jamaica. All rights reserved.</p>
+      </footer>
     </div>
   );
+}
 
-  // ═══ PARISHES ═══
-  const ParishesPage = () => (
-    <div>
-      <Section overline="Reconnect with Yard" title="Parish Communities" subtitle="Digital spaces organized by parish, school alumni, and interests." />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginBottom: 32 }}>
-        {PARISHES.map((p, i) => (
-          <button key={i} onClick={() => setSelectedParish(selectedParish === i ? null : i)} style={{ background: selectedParish === i ? `${t.gold}12` : t.card, border: `1px solid ${selectedParish === i ? t.goldDim : t.border}`, borderRadius: 12, padding: "20px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
-            <div style={{ fontSize: 28 }}>{p.icon}</div>
-            <div style={{ fontFamily: f.display, fontSize: 18, fontWeight: 600, color: t.text, marginTop: 8 }}>{p.name}</div>
-            <div style={{ fontFamily: f.body, fontSize: 11, color: t.textMut, marginTop: 4 }}>Pop: {p.pop}</div>
-            <div style={{ fontFamily: f.body, fontSize: 12, color: t.textSec, marginTop: 6 }}>{p.vibe}</div>
-          </button>
-        ))}
-      </div>
-      {selectedParish !== null && (
-        <div style={{ background: t.card, border: `1px solid ${t.goldDim}`, borderRadius: 16, padding: 32, marginBottom: 24 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-            <span style={{ fontSize: 48 }}>{PARISHES[selectedParish].icon}</span>
-            <div>
-              <h3 style={{ fontFamily: f.display, fontSize: 28, fontWeight: 700, color: t.text, margin: 0 }}>{PARISHES[selectedParish].name} Community</h3>
-              <div style={{ fontFamily: f.body, fontSize: 13, color: t.textSec, marginTop: 4 }}>{PARISHES[selectedParish].vibe}</div>
-            </div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
-            {[{ l: "Discussion Board", i: "💬" }, { l: "School Alumni", i: "🎓" }, { l: "Photo Memories", i: "📷" }, { l: "Local Events", i: "📅" }].map((item, j) => (
-              <div key={j} style={{ background: t.cardHover, borderRadius: 10, padding: "16px 14px", border: `1px solid ${t.border}` }}>
-                <span style={{ fontSize: 22 }}>{item.i}</span>
-                <div style={{ fontFamily: f.body, fontSize: 13, fontWeight: 600, color: t.text, marginTop: 6 }}>{item.l}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      <Section overline="Ways to Connect" title="Find Your People" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16 }}>
-        {[
-          { icon: "🏫", title: "School Alumni Networks", d: "Find classmates from your school or university", m: "12,400+" },
-          { icon: "⛪", title: "Church Communities", d: "Connect with congregations from your parish", m: "3,200+" },
-          { icon: "⚽", title: "Sports & Interests", d: "Join groups by hobby, sport, or interest", m: "8,700+" },
-          { icon: "👨‍👩‍👧‍👦", title: "Family Networks", d: "Extended family connections across the diaspora", m: "5,100+" },
-        ].map((g, i) => (
-          <div key={i} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 12, padding: "24px 20px" }}>
-            <span style={{ fontSize: 32 }}>{g.icon}</span>
-            <div style={{ fontFamily: f.display, fontSize: 18, fontWeight: 600, color: t.text, margin: "10px 0 6px" }}>{g.title}</div>
-            <div style={{ fontFamily: f.body, fontSize: 13, color: t.textSec, lineHeight: 1.5, marginBottom: 12 }}>{g.d}</div>
-            <Badge>{g.m} members</Badge>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+// ============ AUTH MODAL COMPONENT ============
+function AuthModal({ mode, onClose, onSwitchMode, onRegister, onLogin }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  // ═══ RETURN GUIDE ═══
-  const ReturnPage = () => {
-    const steps = [
-      { title: "Understanding Today's Jamaica", icon: "🔍", desc: "Jamaica has changed. Learn about daily life realities — cost of living, infrastructure, healthcare, safety, and community dynamics.", topics: ["Cost of living realities", "Healthcare system overview", "Safety and community awareness", "Infrastructure and daily logistics", "Economic landscape"] },
-      { title: "Cultural Reintegration", icon: "🤝", desc: "Returning Jamaicans often experience reverse culture shock. Understanding current social norms and workplace culture helps bridge the gap.", topics: ["Workplace culture differences", "Social expectations", "Communication styles", "Community integration", "Managing expectations"] },
-      { title: "Community Volunteering", icon: "🌱", desc: "Contribute meaningfully through education programs, youth mentoring, environmental projects, and community development.", topics: ["Education volunteering", "Youth mentorship", "Environmental conservation", "Community development", "Skills-based volunteering"] },
-      { title: "Education Pathways", icon: "🎓", desc: "Understand Jamaica's education system, university options, professional certification, and continuing education.", topics: ["K-12 school options", "University landscape", "Professional certifications", "Skills training programs", "Children's education planning"] },
-      { title: "Building Your Network", icon: "🌐", desc: "Success in Jamaica requires relationships. Build genuine connections with communities, professional networks, and services.", topics: ["Professional associations", "Community organizations", "Government services", "Business networks", "Faith communities"] },
-    ];
-    return (
-      <div>
-        <Section overline="Come Home Prepared" title="Return & Reconnection Guide" subtitle="Not logistics — understanding. A learning-based preparation for meaningful reconnection with Jamaica." />
-        <div style={{ display: "flex", gap: 4, marginBottom: 32 }}>
-          {steps.map((_, i) => (<button key={i} onClick={() => setReturnStep(i)} style={{ flex: 1, height: 6, borderRadius: 3, border: "none", cursor: "pointer", background: i <= returnStep ? t.gold : t.border, transition: "all 0.2s" }} />))}
-        </div>
-        <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 16, padding: 36 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-            <span style={{ fontSize: 40 }}>{steps[returnStep].icon}</span>
-            <div>
-              <Badge>Step {returnStep + 1} of {steps.length}</Badge>
-              <h3 style={{ fontFamily: f.display, fontSize: 28, fontWeight: 700, color: t.text, margin: "8px 0 0" }}>{steps[returnStep].title}</h3>
-            </div>
-          </div>
-          <p style={{ fontFamily: f.body, fontSize: 15, color: t.textSec, lineHeight: 1.7, maxWidth: 600, marginBottom: 24 }}>{steps[returnStep].desc}</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {steps[returnStep].topics.map((topic, j) => (
-              <div key={j} style={{ background: t.cardHover, borderRadius: 8, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, border: `1px solid ${t.border}`, cursor: "pointer" }}
-                onMouseOver={e => e.currentTarget.style.borderColor = t.goldDim}
-                onMouseOut={e => e.currentTarget.style.borderColor = t.border}>
-                <span style={{ fontFamily: f.body, fontSize: 13, color: t.text, flex: 1 }}>{topic}</span>
-                <span style={{ color: t.textMut }}>→</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 28 }}>
-            <button onClick={() => setReturnStep(Math.max(0, returnStep - 1))} disabled={returnStep === 0} style={{ fontFamily: f.body, fontSize: 13, fontWeight: 600, padding: "10px 20px", background: "transparent", border: `1px solid ${t.border}`, borderRadius: 8, color: returnStep === 0 ? t.textMut : t.textSec, cursor: returnStep === 0 ? "default" : "pointer" }}>← Previous</button>
-            <button onClick={() => setReturnStep(Math.min(steps.length - 1, returnStep + 1))} disabled={returnStep === steps.length - 1} style={{ fontFamily: f.body, fontSize: 13, fontWeight: 600, padding: "10px 20px", background: returnStep === steps.length - 1 ? t.card : t.gold, color: returnStep === steps.length - 1 ? t.textMut : "#000", border: "none", borderRadius: 8, cursor: returnStep === steps.length - 1 ? "default" : "pointer" }}>Next →</button>
-          </div>
-        </div>
-      </div>
-    );
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (mode === "register") {
+      if (name && email && password) {
+        onRegister(name, email, password);
+        setName("");
+        setEmail("");
+        setPassword("");
+      } else {
+        alert("Please fill all fields");
+      }
+    } else {
+      if (email && password) {
+        onLogin(email, password);
+        setEmail("");
+        setPassword("");
+      } else {
+        alert("Please fill all fields");
+      }
+    }
   };
 
-  // ═══ RENDER ═══
-  const pages = { home: HomePage, learn: LearnPage, guide: GuidePage, knowledge: KnowledgePage, youth: YouthPage, parishes: ParishesPage, return: ReturnPage };
-  const Page = pages[page] || HomePage;
+  return (
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0, 0, 0, 0.7)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 2000,
+      backdropFilter: "blur(4px)",
+    }}>
+      <div style={{
+        backgroundColor: t.card,
+        border: `1px solid ${t.border}`,
+        borderRadius: "12px",
+        padding: "40px",
+        maxWidth: "400px",
+        width: "90%",
+      }}>
+        <h2 style={{
+          color: t.gold,
+          fontSize: "28px",
+          margin: "0 0 30px 0",
+          fontFamily: f.display,
+          textAlign: "center",
+        }}>
+          {mode === "login" ? "Login" : "Register"}
+        </h2>
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {mode === "register" && (
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              style={{
+                padding: "12px 16px",
+                backgroundColor: t.surface,
+                border: `1px solid ${t.border}`,
+                borderRadius: "6px",
+                color: t.text,
+                fontFamily: f.body,
+                fontSize: "14px",
+              }}
+            />
+          )}
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{
+              padding: "12px 16px",
+              backgroundColor: t.surface,
+              border: `1px solid ${t.border}`,
+              borderRadius: "6px",
+              color: t.text,
+              fontFamily: f.body,
+              fontSize: "14px",
+            }}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{
+              padding: "12px 16px",
+              backgroundColor: t.surface,
+              border: `1px solid ${t.border}`,
+              borderRadius: "6px",
+              color: t.text,
+              fontFamily: f.body,
+              fontSize: "14px",
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              padding: "12px 24px",
+              backgroundColor: t.gold,
+              color: t.bg,
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "700",
+              fontSize: "14px",
+              fontFamily: f.body,
+              marginTop: "10px",
+            }}
+          >
+            {mode === "login" ? "Login" : "Register"}
+          </button>
+        </form>
+
+        <p style={{ textAlign: "center", color: t.textMut, fontSize: "13px", margin: "20px 0 0 0" }}>
+          {mode === "login" ? "Don't have an account?" : "Already have an account?"}
+          {" "}
+          <a
+            onClick={onSwitchMode}
+            style={{ color: t.gold, cursor: "pointer", textDecoration: "underline" }}
+          >
+            {mode === "login" ? "Register" : "Login"}
+          </a>
+        </p>
+
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: "16px",
+            right: "16px",
+            backgroundColor: "transparent",
+            border: "none",
+            color: t.text,
+            fontSize: "24px",
+            cursor: "pointer",
+          }}
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============ NEW THREAD FORM COMPONENT ============
+function NewThreadForm({ category, onBack, onSubmit }) {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const cat = FORUM_CATEGORIES.find((c) => c.id === category);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (title && content) {
+      onSubmit(title, content, category);
+      setTitle("");
+      setContent("");
+    } else {
+      alert("Please fill in all fields");
+    }
+  };
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: t.bg, color: t.text, fontFamily: f.body, overflow: "hidden" }}>
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        * { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: ${t.border} transparent; }
-        *::-webkit-scrollbar { width: 6px; } *::-webkit-scrollbar-track { background: transparent; } *::-webkit-scrollbar-thumb { background: ${t.border}; border-radius: 3px; }
-        input::placeholder { color: ${t.textMut}; } button:hover { opacity: 0.92; }
-      `}</style>
+    <div>
+      <div style={{ marginBottom: "30px" }}>
+        <button
+          onClick={onBack}
+          style={{
+            padding: "10px 16px",
+            backgroundColor: t.border,
+            color: t.text,
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "14px",
+            fontFamily: f.body,
+          }}
+        >
+          ← Back
+        </button>
+      </div>
 
-      <aside style={{ width: sideOpen ? 240 : 64, minWidth: sideOpen ? 240 : 64, background: t.surface, borderRight: `1px solid ${t.border}`, display: "flex", flexDirection: "column", transition: "all 0.2s", overflow: "hidden" }}>
-        <div style={{ padding: sideOpen ? "20px 20px 16px" : "20px 12px 16px", borderBottom: `1px solid ${t.border}`, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={() => setSideOpen(!sideOpen)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, fontSize: 24, lineHeight: 1 }}>🇯🇲</button>
-          {sideOpen && <div>
-            <div style={{ fontFamily: f.display, fontSize: 18, fontWeight: 700, color: t.gold, lineHeight: 1 }}>Digital Jamaica</div>
-            <div style={{ fontFamily: f.body, fontSize: 9, color: t.textMut, textTransform: "uppercase", letterSpacing: "0.15em", marginTop: 2 }}>Learn · Connect · Contribute</div>
-          </div>}
-        </div>
-        <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
-          {navItems.map(item => (
-            <button key={item.id} onClick={() => setPage(item.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: sideOpen ? "10px 14px" : "10px 0", borderRadius: 8, background: page === item.id ? `${t.gold}15` : "transparent", color: page === item.id ? t.gold : t.textSec, border: "none", cursor: "pointer", fontSize: 13, fontWeight: page === item.id ? 600 : 400, fontFamily: f.body, textAlign: "left", transition: "all 0.15s", justifyContent: sideOpen ? "flex-start" : "center", whiteSpace: "nowrap" }}>
-              <span style={{ fontSize: 18, flexShrink: 0 }}>{item.icon}</span>
-              {sideOpen && <span>{item.label}</span>}
-            </button>
-          ))}
-        </nav>
-        {sideOpen && <div style={{ padding: "16px 20px", borderTop: `1px solid ${t.border}` }}>
-          <div style={{ fontFamily: f.body, fontSize: 10, color: t.textMut, lineHeight: 1.6 }}>Created by Rohan Jowallah<br />© 2025 Digital Jamaica</div>
-        </div>}
-      </aside>
+      <div style={{
+        padding: "40px",
+        backgroundColor: t.card,
+        border: `1px solid ${t.border}`,
+        borderRadius: "8px",
+        maxWidth: "800px",
+      }}>
+        <h2 style={{
+          color: t.gold,
+          fontSize: "28px",
+          margin: "0 0 12px 0",
+          fontFamily: f.display,
+        }}>
+          New Thread
+        </h2>
+        <p style={{ color: t.textMut, fontSize: "14px", margin: "0 0 30px 0" }}>
+          in {cat?.icon} {cat?.title}
+        </p>
 
-      <main style={{ flex: 1, padding: "32px 40px", overflow: "auto", animation: "fadeIn 0.25s ease" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto" }}><Page /></div>
-      </main>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div>
+            <label style={{ color: t.text, display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: "700" }}>
+              Thread Title
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="What's your topic?"
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                backgroundColor: t.surface,
+                border: `1px solid ${t.border}`,
+                borderRadius: "6px",
+                color: t.text,
+                fontFamily: f.body,
+                fontSize: "14px",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ color: t.text, display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: "700" }}>
+              Content
+            </label>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Share your thoughts, question, or story..."
+              rows="10"
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                backgroundColor: t.surface,
+                border: `1px solid ${t.border}`,
+                borderRadius: "6px",
+                color: t.text,
+                fontFamily: f.body,
+                fontSize: "14px",
+                boxSizing: "border-box",
+                resize: "vertical",
+              }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            style={{
+              padding: "12px 24px",
+              backgroundColor: t.gold,
+              color: t.bg,
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "700",
+              fontSize: "14px",
+              fontFamily: f.body,
+            }}
+          >
+            Post Thread
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
