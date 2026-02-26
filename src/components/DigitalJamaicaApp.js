@@ -294,7 +294,14 @@ export default function DigitalJamaicaApp() {
   const [selectedForumCategory, setSelectedForumCategory] = useState(null);
   const [threads, setThreads] = useState(SAMPLE_THREADS);
   const [mounted, setMounted] = useState(false);
+  const [toast, setToast] = useState(null);
   const navRef = useRef(null);
+
+  // Toast notification helper
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  }, []);
 
   // ============ HYDRATION & PERSISTENCE ============
   useEffect(() => {
@@ -347,7 +354,7 @@ export default function DigitalJamaicaApp() {
       }
       // Check if email already registered
       if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-        alert("An account with this email already exists. Please login instead.");
+        showToast("An account with this email already exists. Please login instead.", "error");
         return;
       }
       // Create new user
@@ -365,10 +372,10 @@ export default function DigitalJamaicaApp() {
       localStorage.setItem("dj_session", JSON.stringify(session));
       setUser(session);
       setShowAuthModal(false);
-      alert("Registration successful! Welcome to Digital Jamaica, " + name + "!");
+      showToast("Registration successful! Welcome to Digital Jamaica, " + name + "!");
     } catch (e) {
       console.error("Registration error:", e);
-      alert("Registration failed. Please try again.");
+      showToast("Registration failed. Please try again.", "error");
     }
   };
 
@@ -376,12 +383,12 @@ export default function DigitalJamaicaApp() {
     try {
       const stored = localStorage.getItem("dj_users");
       if (!stored) {
-        alert("No accounts found. Please register first.");
+        showToast("No accounts found. Please register first.", "error");
         return;
       }
       const users = JSON.parse(stored);
       if (!Array.isArray(users)) {
-        alert("No accounts found. Please register first.");
+        showToast("No accounts found. Please register first.", "error");
         return;
       }
       const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
@@ -391,11 +398,11 @@ export default function DigitalJamaicaApp() {
         setUser(session);
         setShowAuthModal(false);
       } else {
-        alert("Invalid email or password. Please try again.");
+        showToast("Invalid email or password. Please try again.", "error");
       }
     } catch (e) {
       console.error("Login error:", e);
-      alert("Login failed. Please try again.");
+      showToast("Login failed. Please try again.", "error");
     }
   };
 
@@ -884,6 +891,7 @@ export default function DigitalJamaicaApp() {
           category={selectedForumCategory}
           onBack={() => setForumViewMode("threads")}
           onSubmit={handleCreateThread}
+          showToast={showToast}
         />
       );
     }
@@ -1183,7 +1191,34 @@ export default function DigitalJamaicaApp() {
           onSwitchMode={() => setAuthMode(authMode === "login" ? "register" : "login")}
           onRegister={handleRegister}
           onLogin={handleLogin}
+          showToast={showToast}
         />
+      )}
+
+      {/* TOAST NOTIFICATION */}
+      {toast && (
+        <div
+          onClick={() => setToast(null)}
+          style={{
+            position: "fixed",
+            bottom: "30px",
+            right: "30px",
+            padding: "16px 24px",
+            backgroundColor: toast.type === "error" ? t.red : t.green,
+            color: "#fff",
+            borderRadius: "8px",
+            fontSize: "14px",
+            fontFamily: f.body,
+            fontWeight: "600",
+            zIndex: 3000,
+            cursor: "pointer",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+            animation: "fadeIn 0.3s ease",
+            maxWidth: "400px",
+          }}
+        >
+          {toast.message}
+        </div>
       )}
 
       {/* FOOTER */}
@@ -1202,7 +1237,7 @@ export default function DigitalJamaicaApp() {
 }
 
 // ============ AUTH MODAL COMPONENT ============
-function AuthModal({ mode, onClose, onSwitchMode, onRegister, onLogin }) {
+function AuthModal({ mode, onClose, onSwitchMode, onRegister, onLogin, showToast }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -1216,7 +1251,7 @@ function AuthModal({ mode, onClose, onSwitchMode, onRegister, onLogin }) {
         setEmail("");
         setPassword("");
       } else {
-        alert("Please fill all fields");
+        showToast("Please fill all fields", "error");
       }
     } else {
       if (email && password) {
@@ -1224,7 +1259,7 @@ function AuthModal({ mode, onClose, onSwitchMode, onRegister, onLogin }) {
         setEmail("");
         setPassword("");
       } else {
-        alert("Please fill all fields");
+        showToast("Please fill all fields", "error");
       }
     }
   };
@@ -1360,7 +1395,7 @@ function AuthModal({ mode, onClose, onSwitchMode, onRegister, onLogin }) {
 }
 
 // ============ NEW THREAD FORM COMPONENT ============
-function NewThreadForm({ category, onBack, onSubmit }) {
+function NewThreadForm({ category, onBack, onSubmit, showToast }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const cat = FORUM_CATEGORIES.find((c) => c.id === category);
@@ -1372,7 +1407,7 @@ function NewThreadForm({ category, onBack, onSubmit }) {
       setTitle("");
       setContent("");
     } else {
-      alert("Please fill in all fields");
+      showToast("Please fill in all fields", "error");
     }
   };
 
