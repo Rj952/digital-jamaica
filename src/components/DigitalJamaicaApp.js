@@ -140,7 +140,7 @@ const YOUTH_JOURNEYS = [
 ];
 
 const GUIDE_QUESTIONS = [
-  { category: "Getting Started", questions: ["How do I create a profile?", "What can I do on Jamaica Hub?"] },
+  { category: "Getting Started", questions: ["How do I create a profile?", "What can I do on Digital Jamaica?"] },
   { category: "Content", questions: ["How do I search for information?", "Can I save content?"] },
   { category: "Community", questions: ["How do I join discussions?", "How do I report issues?"] },
   { category: "Technical", questions: ["What browsers are supported?", "Is there a mobile app?"] },
@@ -167,7 +167,7 @@ const SAMPLE_THREADS = [
 
 const COMMUNITY_GUIDELINES = [
   { title: "Be Respectful", description: "Treat all community members with dignity and respect regardless of background." },
-  { title: "Stay On Topic", description: "Keep discussions relevant to Jamaica Hub and its communities." },
+  { title: "Stay On Topic", description: "Keep discussions relevant to Digital Jamaica and its communities." },
   { title: "No Spam", description: "Avoid promotional content, spam, or excessive self-promotion." },
   { title: "Fact-Check", description: "Verify information before sharing and cite credible sources." },
   { title: "Celebrate Diversity", description: "Embrace the diverse perspectives within our community." },
@@ -316,7 +316,7 @@ const AuthModal = ({ show, onClose, onRegister, onLogin }) => {
         }}
       >
         <h3 style={{ color: t.gold, marginBottom: "30px", fontSize: "24px" }}>
-          {isLogin ? "Welcome Back" : "Join Jamaica Hub"}
+          {isLogin ? "Welcome Back" : "Join Digital Jamaica"}
         </h3>
         <form onSubmit={handleSubmit}>
           {!isLogin && (
@@ -706,12 +706,10 @@ export default function DigitalJamaicaApp() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  if (!mounted) return null;
-
   // ============ HOME TAB ============
   const renderHome = () => (
     <div>
-      <Section title="Welcome to Jamaica Hub">
+      <Section title="Welcome to Digital Jamaica">
         <div style={{ marginBottom: "50px" }}>
           <p style={{ fontSize: "18px", color: t.textSec, marginBottom: "20px" }}>
             Discover Jamaica's rich heritage, connect with communities, and explore opportunities
@@ -736,10 +734,9 @@ export default function DigitalJamaicaApp() {
             <div
               key={idx}
               onClick={() => {
-                if (idx === 0) setActiveTab("learn");
-                if (idx === 1) setActiveTab("guide");
-                if (idx === 2) setActiveTab("knowledge");
-                if (idx === 3) setActiveTab("forum");
+                const tabs = ["learn", "guide", "knowledge", "forum"];
+                setActiveTab(tabs[idx]);
+                scrollToTop();
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = t.cardHover;
@@ -778,7 +775,7 @@ export default function DigitalJamaicaApp() {
           }}
         >
           <h3 style={{ color: t.gold, fontSize: "24px", marginBottom: "30px" }}>
-            Jamaica Hub Stats
+            Digital Jamaica Stats
           </h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "30px" }}>
             {[
@@ -2088,7 +2085,7 @@ export default function DigitalJamaicaApp() {
                 margin: 0,
               }}
             >
-              Jamaica Hub
+              Digital Jamaica
             </h1>
             <div style={{ display: "flex", gap: "10px" }}>
               {user ? (
@@ -2300,7 +2297,7 @@ export default function DigitalJamaicaApp() {
           >
             <div>
               <h3 style={{ color: t.gold, fontSize: "18px", marginBottom: "15px" }}>
-                About Jamaica Hub
+                About Digital Jamaica
               </h3>
               <p style={{ color: t.textSec, fontSize: "14px", lineHeight: "1.6" }}>
                 Connecting Jamaicans globally to celebrate heritage, share knowledge, and build opportunities.
@@ -2310,10 +2307,15 @@ export default function DigitalJamaicaApp() {
               <h3 style={{ color: t.gold, fontSize: "18px", marginBottom: "15px" }}>
                 Quick Links
               </h3>
-              {["Learn Jamaica", "Guide", "Forum", "Contact"].map((link, idx) => (
+              {[
+                { label: "Learn Jamaica", tab: "learn" },
+                { label: "Guide", tab: "guide" },
+                { label: "Forum", tab: "forum" },
+                { label: "Help", tab: "help" },
+              ].map((link, idx) => (
                 <p
                   key={idx}
-                  onClick={() => showToast(`Navigating to ${link}`)}
+                  onClick={() => { setActiveTab(link.tab); scrollToTop(); }}
                   style={{
                     color: t.text,
                     fontSize: "14px",
@@ -2327,7 +2329,7 @@ export default function DigitalJamaicaApp() {
                     e.currentTarget.style.color = t.text;
                   }}
                 >
-                  {link}
+                  {link.label}
                 </p>
               ))}
             </div>
@@ -2368,7 +2370,7 @@ export default function DigitalJamaicaApp() {
               fontSize: "14px",
             }}
           >
-            <p>© 2024 Jamaica Hub. All rights reserved.</p>
+            <p>© 2026 Digital Jamaica. All rights reserved.</p>
           </div>
         </div>
       </footer>
